@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="version">Beta-29</string>
+    <string name="versionCode">34</string>
+    <string name="title_activity_maps">Map</string>
+    <string name="title_activity_main">Jotihunter</string>
+
+    <string name="title_activity_settings">SettingsActivity</string>
+    <string name="action_refresh">Update</string>
+
+    <string name="standard_username">Gebruikersnaam</string>
+    <string name="send_location_summ">elke minuut je locatie verzenden</string>
+    <string name="send_loction_title">Locatie bijhouden</string>
+    <string name="username_not_set">Je gebruikernaam is niet ingesteld</string>
+
+    <string name="pref_deelgebieden">Deelgebieden</string>
+    <string name="alpha">Alpha</string>
+    <string name="alpha_sum">show Alpha(Rood)</string>
+    <string name="bravo">Bravo</string>
+    <string name="bravo_sum">show Bravo(Groen)</string>
+    <string name="charlie">Charlie</string>
+    <string name="charlie_sum">show Charlie(Blauw)</string>
+    <string name="delta">Delta</string>
+    <string name="delta_sum">show Delta(Turquoise)</string>
+    <string name="echo">Echo</string>
+    <string name="echo_sum">show Echo(Paars)</string>
+    <string name="foxtrot">Foxtrot</string>
+    <string name="foxtrot_sum">show Foxtrot(Geel)</string>
+    <string name="xray">Xray</string>
+    <string name="xray_sum">show Xray(Zwart)</string>
+    <string name="tail">Hunters</string>
+    <string name="tail_sum">show hunters</string>
+    <string name="sc">Scouting Groepen</string>
+    <string name="sc_sum">show Scouting Groepen</string>
+    <string name="foto">FotoOpdrachten</string>
+    <string name="foto_sum">show FotoOpdrachten</string>
+    <string name="send_debug_summ">geef debug messages weer.</string>
+    <string name="send_debug_title">Debug</string>
+    <string name="send_post_summ">zend locaties via post(true) of get(false)</string>
+    <string name="send_post_title">zend als locaties door als een post request</string>
+    <string name="pref_zoom_summ">zoomlevel tussen2.0 en 22.0</string>
+    <string name="pref_zoom_title">Zoom</string>
+    <string name="action_map_camera">Volgen</string>
+    <string name="pref_speed_title">Snelheid van de vossen</string>
+    <string name="pref_speed_summ">snelheid van de vossen in km per uur</string>
+    <string name="pref_location_interval_title">Interval locatie updates in minuten</string>
+    <string name="pref_location_interval_summ">tussen de 1 en 5 minuten</string>
+    <string name="pref_update_summ">update inteval in minuten</string>
+    <string name="pref_update_title">update interval</string>
+    <string name="pref_map_cat">Map</string>
+    <string name="pref_loc_cat">Locatie settings</string>
+    <string name="action_reset_circles">Verwijder cirkels</string>
+    <string name="send_follow_title">Nauwkeurige Locatie</string>
+    <string name="send_follow_summ">Gebruikt de nauwkeurige Locatie zolang de app actief is.</string>
+    <string name="send_follow_reset_map_title">doet niks meer</string>
+    <string name="send_follow_reset_map_summ">doet niks meer.</string>
+    <string name="send_toast_title">Notificaties</string>
+    <string name="send_toast_summ">laat de notificaties onderaan je scherm zien</string>
+    <string name="pref_deelgebieden_overlay_title">Deelgebieden</string>
+    <string name="pref_deelgebieden_overlay">laat deelgebieden zien.</string>
+    <string name="pref_thema_title">Thema</string>
+    <string name="pref_thema_summ">Iconen in thema</string>
+</resources>
