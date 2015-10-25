@@ -3,6 +3,9 @@ package com.rsdt.jotial.data.structures.area348.receivables;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
+
 /**
  * @author Dingenis Sieger Sinke
  * @version 1.0
@@ -77,5 +80,27 @@ public class VosInfo extends BaseInfo implements Parcelable {
             return new VosInfo[size];
         }
     };
+
+    /**
+     * Deserializes a VosInfo from JSON.
+     * @param json The JSON where the VosInfo should be deserialized from.
+     * @return The VosInfo deserialized from the JSON.
+     */
+    public static VosInfo fromJson(String json) {
+        JsonReader jsonReader = new JsonReader(new java.io.StringReader(json));
+        jsonReader.setLenient(true);
+        return new Gson().fromJson(jsonReader, VosInfo.class);
+    }
+
+    /**
+     * Deserializes a VosInfo array from JSON.
+     * @param json The JSON where the array should be deserialized from.
+     * @return The array of VosInfo deserialized from the JSON.
+     */
+    public static VosInfo[] fromJsonArray(String json) {
+        JsonReader jsonReader = new JsonReader(new java.io.StringReader(json));
+        jsonReader.setLenient(true);
+        return new Gson().fromJson(jsonReader, VosInfo[].class);
+    }
 
 }

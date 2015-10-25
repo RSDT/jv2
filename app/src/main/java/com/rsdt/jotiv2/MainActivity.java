@@ -5,6 +5,7 @@ import android.app.FragmentTransaction;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -15,11 +16,18 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.rsdt.jotial.communication.ApiManager;
+import com.rsdt.jotial.communication.ApiRequest;
+import com.rsdt.jotial.communication.ApiResult;
+import com.rsdt.jotial.communication.LinkBuilder;
+import com.rsdt.jotial.data.structures.area348.receivables.VosInfo;
 import com.rsdt.jotiv2.fragments.JotiMapFragment;
 import com.rsdt.jotiv2.fragments.JotiPreferenceFragment;
 
+import java.util.ArrayList;
+
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener, ApiManager.OnApiTaskComplete {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +53,28 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
+        ApiManager apiManager = new ApiManager();
+
+        LinkBuilder.setRoot("http://jotihunt-api.area348.nl");
+
+        apiManager.queue(new ApiRequest(LinkBuilder.build(new String[]{"vos", "a", "all"}), null));
+        apiManager.addListener(this);
+
+        apiManager.preform();
+    }
+
+    @Override
+    public void onApiTaskCompleted(ArrayList<ApiResult> results) {
+        ApiResult result = results.get(0);
+        String[] args = result.getRequest().getUrl().getPath().split("/");
+        switch(args[1])
+        {
+            case "vos":
+                VosInfo[] data = VosInfo.fromJsonArray(result.getData());
+                Log.i("MainActivity", "Data deserialized.");
+                break;
+        }
     }
 
     @Override

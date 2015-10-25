@@ -28,4 +28,11 @@ public class ApiResult {
      * */
     private String data;
 
+    public ApiRequest getRequest() {
+        return request;
+    }
+
+    public String getData() {
+        return data;
+    }
 }

@@ -74,9 +74,9 @@ public class FotoOpdrachtInfo extends BaseInfo implements Parcelable {
     };
 
     /**
-     * Reads JSON and deserializes it to a FotoOpdrachtInfo.
-     * @param json The json to be deserialized.
-     * @return The deserialized FotoOpdrachtInfo object.
+     * Deserializes a FotoOpdrachtInfo from the JSON.
+     * @param json The JSON where the FotoOpdrachtInfo should be deserialized from.
+     * @return A FotoOpdrachtInfo.
      */
     public static FotoOpdrachtInfo fromJson(String json) {
         JsonReader jsonReader = new JsonReader(new java.io.StringReader(json));
@@ -85,8 +85,9 @@ public class FotoOpdrachtInfo extends BaseInfo implements Parcelable {
     }
 
     /**
-     * @param json
-     * @return
+     * Deserializes a array of FotoOpdrachtInfo from the JSON.
+     * @param json The JSON where the array of FotoOpdrachtInfo should be deserialized from.
+     * @return A array of FotoOpdrachtInfo.
      */
     public static FotoOpdrachtInfo[] fromJsonArray(String json) {
         JsonReader jsonReader = new JsonReader(new java.io.StringReader(json));

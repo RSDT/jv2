@@ -3,6 +3,9 @@ package com.rsdt.jotial.data.structures.area348.receivables;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
+
 /**
  * @author Dingenis Sieger Sinke
  * @version 1.0
@@ -62,4 +65,26 @@ public class ScoutingGroepInfo extends BaseInfo implements Parcelable {
             return new ScoutingGroepInfo[size];
         }
     };
+
+    /**
+     * Deserializes a ScoutingGroepInfo from JSON.
+     * @param json The JSON where the ScoutingGroepInfo should be deserialized from.
+     * @return The deserialized ScoutingGroepInfo.
+     */
+    public static ScoutingGroepInfo fromJson(String json) {
+        JsonReader jsonReader = new JsonReader(new java.io.StringReader(json));
+        jsonReader.setLenient(true);
+        return new Gson().fromJson(jsonReader, ScoutingGroepInfo.class);
+    }
+
+    /**
+     * Deserializes a array of ScoutingGroepInfo from JSON.
+     * @param json The JSON where the array of ScoutingGroepInfo should be deserialized from.
+     * @return The deserialized array of ScoutingGroepInfo.
+     */
+    public static ScoutingGroepInfo[] fromJsonArray(String json) {
+        JsonReader jsonReader = new JsonReader(new java.io.StringReader(json));
+        jsonReader.setLenient(true);
+        return new Gson().fromJson(jsonReader, ScoutingGroepInfo[].class);
+    }
 }
