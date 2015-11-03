@@ -3,16 +3,19 @@ package com.rsdt.jotial.data.structures.area348.receivables;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.google.android.gms.maps.model.LatLng;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
+import com.google.maps.android.clustering.ClusterItem;
 
 /**
  * @author Dingenis Sieger Sinke
  * @version 1.0
  * @since 20-10-2015
  * Class that servers as deserialization object for the ScoutingGroepInfo.
+ * NOTE: This class implements ClusterItem and thereby can be clustered.
  */
-public class ScoutingGroepInfo extends BaseInfo implements Parcelable {
+public class ScoutingGroepInfo extends BaseInfo implements Parcelable, ClusterItem {
 
     /**
      * Initializes a new instance of ScoutingGroepInfo from the parcel.
@@ -40,6 +43,14 @@ public class ScoutingGroepInfo extends BaseInfo implements Parcelable {
      * The area where the ScoutingGroepInfo is located.
      */
     public String deelgebied;
+
+    @Override
+    /**
+     * Cluster item implementation.
+     * */
+    public LatLng getPosition() {
+        return new LatLng(super.latitude, super.longitude);
+    }
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {

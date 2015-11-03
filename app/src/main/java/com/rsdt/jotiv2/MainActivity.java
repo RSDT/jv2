@@ -4,8 +4,6 @@ import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -15,19 +13,27 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.animation.Animation;
+import android.view.animation.RotateAnimation;
+import android.widget.ImageButton;
 
-import com.rsdt.jotial.communication.ApiManager;
-import com.rsdt.jotial.communication.ApiRequest;
-import com.rsdt.jotial.communication.ApiResult;
-import com.rsdt.jotial.communication.LinkBuilder;
-import com.rsdt.jotial.data.structures.area348.receivables.VosInfo;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.rsdt.jotial.mapping.area348.JotiInfoWindowAdapter;
+import com.rsdt.jotial.mapping.area348.MapManager;
+import com.rsdt.jotial.mapping.area348.data.MapData;
+import com.rsdt.jotial.mapping.area348.behaviour.VosInfoBehaviour;
 import com.rsdt.jotiv2.fragments.JotiMapFragment;
 import com.rsdt.jotiv2.fragments.JotiPreferenceFragment;
 
-import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener, ApiManager.OnApiTaskComplete {
+        implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback {
+
+    MapManager mapManager;
+
+    static AppPages currentPage = AppPages.HOME;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,8 +46,14 @@ public class MainActivity extends AppCompatActivity
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                RotateAnimation rotate = new RotateAnimation(0, 360,
+                        Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF,
+                        0.5f);
+                rotate.setDuration(2000);
+                rotate.setRepeatCount(Animation.INFINITE);
+                ((ImageButton)view).startAnimation(rotate);
+                view.setEnabled(false);
+                mapManager.update();
             }
         });
 
@@ -54,27 +66,36 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        ApiManager apiManager = new ApiManager();
+        if(currentPage == AppPages.MAP)
+        {
+            if(getFragmentManager().findFragmentById(R.id.content) != null)
+            {
+                ((MapFragment) getFragmentManager().findFragmentById(R.id.content)).getMapAsync(this);
+            }
+        }
 
-        LinkBuilder.setRoot("http://jotihunt-api.area348.nl");
+        if(savedInstanceState != null)
+        {
+     /*       MapDataPair<MarkerOptions> pair2 = savedInstanceState.getBundle("pairBundle").getParcelable("pair");
+            System.out.print("");
+            System.out.print("LOL");*/
 
-        apiManager.queue(new ApiRequest(LinkBuilder.build(new String[]{"vos", "a", "all"}), null));
-        apiManager.addListener(this);
 
-        apiManager.preform();
+            MapData mapData = savedInstanceState.getParcelable("mapData");
+            System.out.print("");
+        }
     }
 
-    @Override
-    public void onApiTaskCompleted(ArrayList<ApiResult> results) {
-        ApiResult result = results.get(0);
-        String[] args = result.getRequest().getUrl().getPath().split("/");
-        switch(args[1])
-        {
-            case "vos":
-                VosInfo[] data = VosInfo.fromJsonArray(result.getData());
-                Log.i("MainActivity", "Data deserialized.");
-                break;
-        }
+
+    String data = "[{\"id\":\"30\",\"datetime\":\"2015-10-18 14:27:29\",\"latitude\":\"52.180247501296\",\"longitude\":\"6.1351861143609\",\"team\":\"a\",\"team_naam\":\"Alpha\",\"opmerking\":\"\",\"gebruiker\":\"31\"}]";
+
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+   /*     MapDataPair<MarkerOptions> pair = new MapDataPair<>(new MarkerOptions(), new ArrayList<BaseInfo>());
+        Bundle bundle = new Bundle();
+        bundle.putParcelable("pair", pair);
+        savedInstanceState.putBundle("pairBundle", bundle);*/
+        MapData mapData = MapData.from(data, new VosInfoBehaviour(null));
+        savedInstanceState.putParcelable("mapData", mapData);
     }
 
     @Override
@@ -92,6 +113,13 @@ public class MainActivity extends AppCompatActivity
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        mapManager = new MapManager(googleMap);
+        mapManager.sync();
+        googleMap.setInfoWindowAdapter(new JotiInfoWindowAdapter(this.getLayoutInflater(), mapManager));
     }
 
     @Override
@@ -117,22 +145,24 @@ public class MainActivity extends AppCompatActivity
 
         Fragment fragment = getFragmentManager().findFragmentById(R.id.content);
 
-
-
         boolean switchFragment = false;
 
         if (id == R.id.nav_map) {
-            if(!(fragment instanceof JotiMapFragment))
+            if(currentPage != AppPages.MAP)
             {
+                currentPage = AppPages.MAP;
                 switchFragment = true;
                 fragment = new JotiMapFragment();
+                ((MapFragment)fragment).getMapAsync(this);
+                ((Toolbar)findViewById(R.id.toolbar)).setTitle("Map");
             }
-            // Handle the camera action
         } else if (id == R.id.nav_settings) {
-            if(!(fragment instanceof JotiPreferenceFragment))
+            if(currentPage != AppPages.SETTINGS)
             {
+                currentPage = AppPages.SETTINGS;
                 switchFragment = true;
                 fragment = new JotiPreferenceFragment();
+                ((Toolbar)findViewById(R.id.toolbar)).setTitle("Settings");
             }
         } else if (id == R.id.nav_share) {
 
@@ -153,4 +183,31 @@ public class MainActivity extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
+
+
+    @Override
+    public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
+
+        switch(level)
+        {
+            case TRIM_MEMORY_RUNNING_LOW:
+                MapManager.trim();
+                break;
+        }
+
+    }
+
+    public void onDestroy()
+    {
+        super.onDestroy();
+
+        if(mapManager != null)
+        {
+            mapManager.destroy();
+            mapManager = null;
+        }
+
+    }
+
 }
