@@ -10,6 +10,6 @@ package com.rsdt.jotial.mapping.area348.data;
  */
 public interface ToMapDataBehaviour {
 
-    MapData toMapData(String data);
+     MapData toMapData(String data);
 }
 

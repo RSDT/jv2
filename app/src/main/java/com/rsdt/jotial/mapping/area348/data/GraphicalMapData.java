@@ -4,8 +4,6 @@ import android.os.Parcelable;
 import android.util.Log;
 import android.util.Pair;
 
-import com.android.internal.util.Predicate;
-
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
@@ -14,23 +12,27 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 
 /**
  * @author Dingenis Sieger Sinke
  * @version 1.0
  * @since 20-10-2015
- * Object that holds the map items of the MapPartState.
+ * Object that holds the map items of the.
  */
-public class GraphicalMapData implements CapableActionPreformer {
+public class GraphicalMapData {
+
+    /**
+     * Empty constructor for the GraphicalMapData.
+     * */
+    private GraphicalMapData() {}
 
     /**
      * Initializes a new instance of GraphicalMapData.
      * */
-    public GraphicalMapData()
+    protected GraphicalMapData(MapData mapData, GoogleMap googleMap)
     {
-
+        from(this, mapData, googleMap);
     }
 
     /**
@@ -47,75 +49,6 @@ public class GraphicalMapData implements CapableActionPreformer {
      * The circles of the GraphicalMapData.
      * */
     private ArrayList<GraphicalMapDataPair<Circle, CircleOptions>> circles = new ArrayList<>();
-
-    @Override
-    /**
-     * Preforms a action to each item.
-     * */
-    public void preform(ItemAction action) {
-
-        if(action.getType() == Marker.class)
-        {
-            for(int i = 0; i < markers.size(); i++)
-            {
-                action.preform(markers.get(i));
-            }
-        }
-
-        if(action.getType() == Polyline.class)
-        {
-            for(int i = 0; i < markers.size(); i++)
-            {
-                action.preform(markers.get(i));
-            }
-        }
-
-        if(action.getType() == Circle.class)
-        {
-            for(int i = 0; i < markers.size(); i++)
-            {
-                action.preform(markers.get(i));
-            }
-        }
-    }
-
-    @Override
-    /**
-     * Preforms a action to each item when the condition is met.
-     * */
-    public void preform(ItemAction action, Predicate condition) {
-        if(action.getType() == Marker.class)
-        {
-            for(int i = 0; i < markers.size(); i++)
-            {
-                if(condition.apply(markers.get(i)))
-                {
-                    action.preform(markers.get(i));
-                }
-            }
-        }
-
-        if(action.getType() == Polyline.class)
-        {
-            for(int i = 0; i < polylines.size(); i++)
-            {
-                if(condition.apply(polylines.get(i))) {
-                    action.preform(polylines.get(i));
-                }
-            }
-        }
-
-        if(action.getType() == Circle.class)
-        {
-            for(int i = 0; i < circles.size(); i++)
-            {
-                if(condition.apply(circles.get(i))) {
-                    action.preform(circles.get(i));
-                }
-            }
-        }
-    }
-
 
     /**
      * Finds a GraphicalMapDataPair on it's item id.
@@ -184,7 +117,7 @@ public class GraphicalMapData implements CapableActionPreformer {
      * */
     public MapData to()
     {
-        MapData buffer = MapData.empty;
+        MapData buffer = MapData.empty();
 
         ArrayList[] lists = new ArrayList[] { markers, polylines, circles };
         for(int l = 0; l < lists.length; l++)
@@ -221,12 +154,60 @@ public class GraphicalMapData implements CapableActionPreformer {
     {
         GraphicalMapData buffer = new GraphicalMapData();
 
-        MapDataPair<MarkerOptions> pair;
-        for(int m = 0; m < mapData.getMarkers().size(); m++)
-        {
-            pair = mapData.getMarkers().get(m);
-            buffer.markers.add(new GraphicalMapDataPair<>(googleMap.addMarker(pair.first), pair ));
+        ArrayList[] lists = new ArrayList[] { mapData.getMarkers(), mapData.getPolylines(), mapData.getCircles()};
+        ArrayList currentList;
+        for(int l = 0; l < lists.length; l++) {
+            currentList = lists[l];
+            for(int i = 0; i < currentList.size(); i++)
+                switch (l) {
+                    case 0:
+                        MapDataPair<MarkerOptions> pairMarker = (MapDataPair<MarkerOptions>) currentList.get(i);
+                        buffer.markers.add(new GraphicalMapDataPair<>(googleMap.addMarker(pairMarker.first), pairMarker));
+                        break;
+                    case 1:
+                        MapDataPair<PolylineOptions> pairPolyline = (MapDataPair<PolylineOptions>) currentList.get(i);
+                        buffer.polylines.add(new GraphicalMapDataPair<>(googleMap.addPolyline(pairPolyline.first), pairPolyline));
+                        break;
+                    case 2:
+                        MapDataPair<CircleOptions> pairCircle = (MapDataPair<CircleOptions>) currentList.get(i);
+                        buffer.circles.add(new GraphicalMapDataPair<>(googleMap.addCircle(pairCircle.first), pairCircle));
+                        break;
+                }
         }
         return buffer;
     }
+
+    /**
+     * Generates a GraphicalMapData from the MapData and by using the GoogleMap.
+     *
+     * @param mapData The MapData where the GraphicalMapData should be generated from.
+     * @param googleMap The GoogleMap that is used to create the GraphicalMapData.
+     *
+     * @return The GraphicalMapData generated from the MapData using the GoogleMap.
+     * */
+    public static GraphicalMapData from(GraphicalMapData in, MapData mapData, GoogleMap googleMap)
+    {
+        ArrayList[] lists = new ArrayList[] { mapData.getMarkers(), mapData.getPolylines(), mapData.getCircles()};
+        ArrayList currentList;
+        for(int l = 0; l < lists.length; l++) {
+            currentList = lists[l];
+            for(int i = 0; i < currentList.size(); i++)
+                switch (l) {
+                    case 0:
+                        MapDataPair<MarkerOptions> pairMarker = (MapDataPair<MarkerOptions>) currentList.get(i);
+                        in.markers.add(new GraphicalMapDataPair<>(googleMap.addMarker(pairMarker.first), pairMarker));
+                        break;
+                    case 1:
+                        MapDataPair<PolylineOptions> pairPolyline = (MapDataPair<PolylineOptions>) currentList.get(i);
+                        in.polylines.add(new GraphicalMapDataPair<>(googleMap.addPolyline(pairPolyline.first), pairPolyline));
+                        break;
+                    case 2:
+                        MapDataPair<CircleOptions> pairCircle = (MapDataPair<CircleOptions>) currentList.get(i);
+                        in.circles.add(new GraphicalMapDataPair<>(googleMap.addCircle(pairCircle.first), pairCircle));
+                        break;
+                }
+        }
+        return in;
+    }
+
 }

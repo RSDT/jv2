@@ -1,37 +1,34 @@
 package com.rsdt.jotial.mapping.area348;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.util.Log;
 import android.view.View;
-
-import com.android.internal.util.Predicate;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.clustering.ClusterManager;
 
 import com.rsdt.jotial.JotiApp;
-import com.rsdt.jotial.communication.ApiManager;
-import com.rsdt.jotial.communication.ApiRequest;
+import com.rsdt.jotial.UpdateService;
 import com.rsdt.jotial.communication.ApiResult;
-import com.rsdt.jotial.communication.LinkBuilder;
+import com.rsdt.jotial.communication.StaticApiManger;
 import com.rsdt.jotial.data.structures.area348.receivables.ScoutingGroepInfo;
-import com.rsdt.jotial.mapping.area348.behaviour.BehaviourManager;
-import com.rsdt.jotial.mapping.area348.behaviour.ScoutingGroepClusterBehaviour;
+import com.rsdt.jotial.mapping.area348.behaviour.MapBehaviourManager;
+import com.rsdt.jotial.mapping.area348.behaviour.ScoutingGroepMapBehaviour;
+import com.rsdt.jotial.mapping.area348.behaviour.VosMapBehaviour;
 import com.rsdt.jotial.mapping.area348.clustering.ScoutingGroepInfoRenderer;
-import com.rsdt.jotial.mapping.area348.data.GraphicalMapData;
-import com.rsdt.jotial.mapping.area348.data.ItemAction;
 import com.rsdt.jotial.mapping.area348.data.MapData;
-import com.rsdt.jotial.mapping.area348.data.MapPartState;
 
-import java.lang.reflect.Type;
-import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -41,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  * The final control unit for map managing.
  */
 
-public class MapManager implements ApiManager.OnApiTaskCompleteCallback, JotiInfoWindowAdapter.OnGetInfoWindowCallback, DataManager.OnDataTaskCompletedCallback {
+public class MapManager implements JotiInfoWindowAdapter.OnGetInfoWindowCallback, DataManager.OnDataTaskCompletedCallback {
 
     /**
      * Initializes a new instance of MapManager.
@@ -51,19 +48,14 @@ public class MapManager implements ApiManager.OnApiTaskCompleteCallback, JotiInf
     public MapManager(GoogleMap googleMap)
     {
         this.googleMap = googleMap;
-        if(!servicesActive)
-        {
-            apiManager.addListener(dataManager);
-            servicesActive = true;
-        }
+
         dataManager.addListener(this);
-        apiManager.addListener(this);
+
         scClusterManager = new ClusterManager<>(JotiApp.getContext(), googleMap);
         scClusterManager.setRenderer(new ScoutingGroepInfoRenderer(JotiApp.getContext(), googleMap, scClusterManager));
+        googleMap.setOnCameraChangeListener(scClusterManager);
+        googleMap.setOnMarkerClickListener(scClusterManager);
     }
-
-
-    public static boolean servicesActive = false;
 
     /**
      * The GoogleMap the MapManager should work with.
@@ -71,23 +63,40 @@ public class MapManager implements ApiManager.OnApiTaskCompleteCallback, JotiInf
     private GoogleMap googleMap;
 
     /**
-     * The behaviour manager of the MapManager.
+     * The MapBehaviour manager for the MapManager.
      * */
-    private BehaviourManager behaviourManager = new BehaviourManager();
+    private MapBehaviourManager mapBehaviourManager = new MapBehaviourManager();
 
     /**
-     * The data manager of the MapManager.
+     * Gets the MapBehaviourManager of the MapManager.
      * */
-    private static DataManager dataManager = new DataManager();
+    public MapBehaviourManager getMapBehaviourManager() {
+        return mapBehaviourManager;
+    }
 
     /**
-     * The ApiManager for requesting data, and receiving it.
-     * TODO: Look NOTE.
-     * NOTE: ApiManager is should be static here, because else data could be lost.
-     * While data is still beining received the activity could be dumped and thereby the data.
-     * This way we maintain the data.
+     *
      * */
-    private static ApiManager apiManager = new ApiManager();
+    private static StaticApiManger apiManager = new StaticApiManger();
+
+    /**
+     * Gets the ApiManager of the MapManager.
+     * */
+    public static StaticApiManger getApiManager() {
+        return apiManager;
+    }
+
+    /**
+     *
+     * */
+    private static StaticDataManager dataManager = new StaticDataManager();
+
+    /**
+     * Gets the DataManager of the MapManager.
+     * */
+    public static StaticDataManager getDataManager() {
+        return dataManager;
+    }
 
     /**
      * The cluster manager for the scouting groups.
@@ -99,15 +108,7 @@ public class MapManager implements ApiManager.OnApiTaskCompleteCallback, JotiInf
      * */
     public void sync()
     {
-        LinkBuilder.setRoot("http://jotihunt-api.area348.nl");
 
-        apiManager.queue(new ApiRequest(LinkBuilder.build(new String[]{"vos", "a", "all"}), null));
-        apiManager.queue(new ApiRequest(LinkBuilder.build(new String[]{"sc", "all"}), null));
-
-        googleMap.setOnCameraChangeListener(scClusterManager);
-        googleMap.setOnMarkerClickListener(scClusterManager);
-
-        apiManager.preform();
     }
 
     /**
@@ -115,6 +116,8 @@ public class MapManager implements ApiManager.OnApiTaskCompleteCallback, JotiInf
      * */
     public void update()
     {
+
+
     }
 
 
@@ -132,11 +135,6 @@ public class MapManager implements ApiManager.OnApiTaskCompleteCallback, JotiInf
             circle.remove();
             circle = null;
         }
-
-        /**
-         * Invoke the behaviour manager, he will invoke all the behaviours.
-         * */
-        behaviourManager.onGetInfoWindow(view, marker);
 
         /**
          * TODO: make switch cases for situation, and change the interface so that the type is already defined. onGetInfoWindow(Marker, MapPart);
@@ -188,8 +186,6 @@ public class MapManager implements ApiManager.OnApiTaskCompleteCallback, JotiInf
         }
     }
 
-
-    @Override
     public void onApiTaskCompleted(ArrayList<ApiResult> results) {
         ApiResult currentResult;
         for(int r = 0; r < results.size(); r++)
@@ -203,33 +199,72 @@ public class MapManager implements ApiManager.OnApiTaskCompleteCallback, JotiInf
                     scClusterManager.addItem(sc[i]);
                 }
                 scClusterManager.cluster();
-                behaviourManager.registerBehaviour(new ScoutingGroepClusterBehaviour());
             }
         }
 
     }
 
     @Override
-    public void onDataTaskCompleted(ArrayList<MapPartState> mapPartStates) {
-
-        /**
-         * State should not be able to be created if there's no MapData.
-         * */
-        MapPartState currentState;
-        for(int i = 0; i < mapPartStates.size(); i++)
+    public void onDataTaskCompleted(HashMap<String, MapData> hashMap) {
+        for(Map.Entry<String, MapData> entry : hashMap.entrySet())
         {
-            currentState = mapPartStates.get(i);
-
-            /**
-             * Checks if the MapData is not null, if it is it indicates a special case.
-             * */
-            if(currentState.getMapData() != null)
+            switch (entry.getKey())
             {
-                currentState.setGraphicalMapData(GraphicalMapData.from(currentState.getMapData(), googleMap));
+                case "vos":
+                    this.mapBehaviourManager.add(new VosMapBehaviour(entry.getValue(), googleMap));
+                    break;
+                case "sc":
+                    this.mapBehaviourManager.add(new ScoutingGroepMapBehaviour(entry.getValue(), googleMap));
+                    break;
             }
-            behaviourManager.registerBehaviour(currentState.getBehaviour());
         }
     }
+
+    @Override
+    public DataManager.OnCertainKeywordApiResult getSpecial() {
+        return new DataManager.OnCertainKeywordApiResult() {
+            @Override
+            public String getKeyword() {
+                return "sc";
+            }
+
+            @Override
+            public void onConditionMet(ApiResult result) {
+                ScoutingGroepInfo[] sc = ScoutingGroepInfo.fromJsonArray(result.getData());
+                for(int i = 0; i < sc.length; i++)
+                {
+                    scClusterManager.addItem(sc[i]);
+                }
+                scClusterManager.cluster();
+            }
+        };
+    }
+
+
+    /**
+     * @author Dingenis Sieger Sinke
+     * @version 1.0
+     * @since 18-11-2015
+     * Description...
+     */
+    public static class UpdateServiceReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            switch(intent.getAction())
+            {
+                case UpdateService.UPDATE_SERVICE_ACTIONS_RENEW:
+                    HashMap<String, MapData> hashMap = (HashMap<String, MapData>)intent.getSerializableExtra("hashMap");
+
+                    System.out.print("");
+
+                    break;
+            }
+
+        }
+    }
+
 
     /**
      * Disposes the MapManager and removes listeners.
@@ -239,11 +274,10 @@ public class MapManager implements ApiManager.OnApiTaskCompleteCallback, JotiInf
         this.scClusterManager.clearItems();
         this.scClusterManager = null;
 
-        apiManager.removeListener(this);
-        dataManager.removeListener(this);
+        this.mapBehaviourManager.destroy();
+        this.mapBehaviourManager = null;
 
-        this.behaviourManager.destroy();
-        this.behaviourManager = null;
+        dataManager.removeListener(this);
 
         this.googleMap = null;
     }

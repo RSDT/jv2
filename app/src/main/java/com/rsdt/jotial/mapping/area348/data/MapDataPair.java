@@ -71,7 +71,7 @@ public class MapDataPair<T extends Parcelable> extends Pair<T, ArrayList<BaseInf
     public static final Creator<MapDataPair> CREATOR = new Creator<MapDataPair>() {
         @Override
         public MapDataPair createFromParcel(Parcel in) {
-            return new MapDataPair<MarkerOptions>(in);
+            return new MapDataPair<>(in);
         }
 
         @Override

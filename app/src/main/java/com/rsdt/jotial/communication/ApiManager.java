@@ -21,27 +21,45 @@ public class ApiManager {
     /**
      * The array list that contains the queued requests.
      * */
-    private ArrayList<ApiRequest> queued = new ArrayList<>();
+    protected ArrayList<ApiRequest> queued = new ArrayList<>();
 
     /**
      * The array list that contains the pending requests.
      * */
-    private ArrayList<ApiRequest> pending = new ArrayList<>();
+    protected ArrayList<ApiRequest> pending = new ArrayList<>();
 
     /**
      * The array list that contains the completed requests as ApiResults.
      * */
-    private ArrayList<ApiResult> completed = new ArrayList<>();
+    protected ArrayList<ApiResult> completed = new ArrayList<>();
 
     /**
-     * Results that are not handled by a listener will end up here.
+     * The array list with ongoing tasks.
      * */
-    private ArrayList<ApiResult> waitList = new ArrayList<>();
+    protected ArrayList<ApiTask> tasks = new ArrayList<>();
 
     /**
      * A list with listeners.
      * */
-    private ArrayList<OnApiTaskCompleteCallback> onApiTaskCompleteListeners = new ArrayList<>();
+    protected ArrayList<OnApiTaskCompleteCallback> onApiTaskCompleteListeners = new ArrayList<>();
+
+    /**
+     * Initializes a new instance of ApiManager.
+     * */
+    public ApiManager()
+    {
+
+    }
+
+    /**
+     * Initializes a new instance of ApiManager.
+     *
+     * @param apiTaskCompleteCallback The callback to register.
+     * */
+    public ApiManager(OnApiTaskCompleteCallback apiTaskCompleteCallback)
+    {
+        onApiTaskCompleteListeners.add(apiTaskCompleteCallback);
+    }
 
     /**
      * Adds a listener to the listeners.
@@ -51,16 +69,6 @@ public class ApiManager {
     {
         onApiTaskCompleteListeners.add(listener);
         Log.i("ApiManager", "ApiTask.addListener() - added listener " + listener.toString());
-
-        /**
-         * Check if the wait list is empty, if not handle the results that were put on wait.
-         * */
-        if(!waitList.isEmpty())
-        {
-            listener.onApiTaskCompleted(waitList);
-            waitList.clear();
-            Log.i("ApiManager", "ApiTask.addListener() - invoked the new listener with the queued data");
-        }
     }
 
     /**
@@ -89,8 +97,11 @@ public class ApiManager {
     {
         pending.addAll(queued);
         queued.clear();
-        new ApiTask().execute(pending.toArray(new ApiRequest[pending.size()]));
-        Log.i("ApiManager", "ApiTask.preform() - preforming  " + pending.size() + " ApiRequests");
+
+        ApiTask task = new ApiTask();
+        task.execute(pending.toArray(new ApiRequest[pending.size()]));
+        tasks.add(task);
+        Log.i("ApiManager", "ApiTask.onConditionMet() - preforming  " + pending.size() + " ApiRequests");
     }
 
     /**
@@ -100,7 +111,7 @@ public class ApiManager {
      * Class that preforms ApiRequests async.
      * TODO: Make response code check.
      */
-    public class ApiTask extends AsyncTask<ApiRequest, Integer, ArrayList<ApiResult>> {
+    protected class ApiTask extends AsyncTask<ApiRequest, Integer, ArrayList<ApiResult>> {
 
         @Override
         protected ArrayList<ApiResult> doInBackground(ApiRequest... params) {
@@ -197,11 +208,6 @@ public class ApiManager {
                 }
                  Log.i("ApiManager", "ApiTask.onPostExecute() - invoked " + onApiTaskCompleteListeners.size() + " listeners");
             }
-            else {
-                waitList.addAll(results);
-                Log.i("ApiManager", "ApiTask.onPostExecute() - 0 listeners, putting results on hold");
-            }
-
             Log.i("ApiManager", "ApiTask.onPostExecute() - completed " + results.size() + " tasks");
         }
     }
@@ -212,6 +218,7 @@ public class ApiManager {
     public void trim()
     {
         this.completed.clear();
+        Log.i("ApiManager", "trim() - clearing the completed list");
     }
 
     /**

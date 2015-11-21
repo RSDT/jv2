@@ -1,7 +1,6 @@
 package com.rsdt.jotial.mapping.area348.clustering;
 
 import android.content.Context;
-import android.view.View;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
@@ -13,10 +12,6 @@ import com.google.maps.android.clustering.ClusterManager;
 import com.google.maps.android.clustering.view.DefaultClusterRenderer;
 
 import com.rsdt.jotial.data.structures.area348.receivables.ScoutingGroepInfo;
-import com.rsdt.jotial.mapping.area348.JotiInfoWindowAdapter;
-import com.rsdt.jotial.mapping.area348.behaviour.InfoBehaviour;
-import com.rsdt.jotial.mapping.area348.data.MapData;
-import com.rsdt.jotial.mapping.area348.data.MapPartState;
 import com.rsdt.jotiv2.R;
 
 /**
@@ -52,7 +47,7 @@ public class ScoutingGroepInfoRenderer extends DefaultClusterRenderer<ScoutingGr
         super.onBeforeClusterRendered(cluster, markerOptions);
 
         /**
-         * Define it is a cluster by format Scouting Groep Cluster(scc).
+         * Define it is a cluster by a format Scouting Groep Cluster(scc).
          * NOTE: You can make a behaviour for this cluster.
          * */
         markerOptions.title("scc;" + cluster.getSize() + ";" + cluster.getPosition().latitude + ";" + cluster.getPosition().longitude);

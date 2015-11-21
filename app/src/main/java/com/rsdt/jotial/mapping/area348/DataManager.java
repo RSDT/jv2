@@ -3,20 +3,23 @@ package com.rsdt.jotial.mapping.area348;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.android.internal.util.Predicate;
 import com.rsdt.jotial.communication.ApiManager;
 import com.rsdt.jotial.communication.ApiResult;
 import com.rsdt.jotial.communication.area348.Area348API;
 
-import com.rsdt.jotial.mapping.area348.data.MapPartState;
+import com.rsdt.jotial.mapping.area348.behaviour.FotoOpdrachtMapBehaviour;
+import com.rsdt.jotial.mapping.area348.behaviour.ScoutingGroepMapBehaviour;
+import com.rsdt.jotial.mapping.area348.behaviour.VosMapBehaviour;
+import com.rsdt.jotial.mapping.area348.data.MapData;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * @author Dingenis Sieger Sinke
  * @version 1.0
  * @since 26-10-2015
- * Description...
+ * Receives data and turns it into MapData.
  */
 public class DataManager implements ApiManager.OnApiTaskCompleteCallback {
 
@@ -24,12 +27,12 @@ public class DataManager implements ApiManager.OnApiTaskCompleteCallback {
     /**
      * The listeners to the on data task completed event.
      * */
-    private ArrayList<OnDataTaskCompletedCallback> onDataTaskCompletedListeners = new ArrayList<>();
+    protected ArrayList<OnDataTaskCompletedCallback> onDataTaskCompletedListeners = new ArrayList<>();
 
     /**
-     * The wait list, that holds the MapPartStates if there are no listeners.
+     * The tasks that are executed or are executing still.
      * */
-    private ArrayList<MapPartState> waitList = new ArrayList<>();
+    protected ArrayList<DataTask> tasks = new ArrayList<>();
 
     /**
      * Add a listener.
@@ -37,15 +40,6 @@ public class DataManager implements ApiManager.OnApiTaskCompleteCallback {
     public void addListener(OnDataTaskCompletedCallback listener)
     {
         onDataTaskCompletedListeners.add(listener);
-
-        /**
-         * Check if the waitList contains items, if so invoke the new listener and clear the waitList.
-         * */
-        if(!waitList.isEmpty())
-        {
-            listener.onDataTaskCompleted(waitList);
-            waitList.clear();
-        }
     }
 
     /**
@@ -61,21 +55,26 @@ public class DataManager implements ApiManager.OnApiTaskCompleteCallback {
      * Method that will be invoked when ApiRequest queued and preformed at the same time give a result.
      * */
     public void onApiTaskCompleted(ArrayList<ApiResult> results) {
-        new DataTask().execute(results.toArray(new ApiResult[results.size()]));
+        DataTask dataTask = new DataTask();
+        dataTask.execute(results.toArray(new ApiResult[results.size()]));
+        tasks.add(dataTask);
     }
 
-
-    private class DataTask extends AsyncTask<ApiResult, Integer, ArrayList<MapPartState>>
+    /**
+     * @author Dingenis Sieger Sinke
+     * @version 1.0
+     * @since 26-10-2015
+     * AsyncTask that will turn the ApiResult's data into MapData.
+     */
+    protected class DataTask extends AsyncTask<ApiResult, Integer, HashMap<String, MapData>>
     {
-
-
         @Override
-        protected ArrayList<MapPartState> doInBackground(ApiResult... params) {
+        protected HashMap<String, MapData> doInBackground(ApiResult... params) {
 
             /**
-             * Create array list for containing the results states from the task.
+             * A buffer to hold the pairs of a String indicator and MapData.
              * */
-            ArrayList<MapPartState> states = new ArrayList<>();
+            HashMap<String, MapData> dataHashMap = new HashMap<>();
 
             /**
              * Allocate a ApiResult as a buffer once.
@@ -97,19 +96,41 @@ public class DataManager implements ApiManager.OnApiTaskCompleteCallback {
                 {
 
                 }
-                states.add(MapPartState.from(currentResult));
+
+
+                /**
+                 * Split the url so we can determine the type of the request.
+                 * TODO: determine type in ApiResult?
+                 * */
+                String[] args = currentResult.getRequest().getUrl().getPath().split("/");
+
+
+                /**
+                 * Switch on the first arg.
+                 * */
+                switch(args[1])
+                {
+                    case "vos":
+                        dataHashMap.put("vos", VosMapBehaviour.toMapData(currentResult.getData()));
+                        break;
+                    case "hunter":
+
+                        break;
+                    case "sc":
+                        dataHashMap.put("sc", ScoutingGroepMapBehaviour.toMapData(currentResult.getData()));
+                        break;
+                    case "foto":
+                        dataHashMap.put("foto", FotoOpdrachtMapBehaviour.toMapData(currentResult.getData()));
+                        break;
+
+                }
             }
 
-            return states;
+            return dataHashMap;
         }
 
-
-
-
-
         @Override
-        protected void onPostExecute(ArrayList<MapPartState> mapPartStates) {
-
+        protected void onPostExecute(HashMap<String,MapData> hashMap) {
             /**
              * Buffer to hold listeners that must be removed.
              * */
@@ -123,7 +144,7 @@ public class DataManager implements ApiManager.OnApiTaskCompleteCallback {
                     callback = onDataTaskCompletedListeners.get(i);
                     if(callback != null)
                     {
-                        callback.onDataTaskCompleted(mapPartStates);
+                        callback.onDataTaskCompleted(hashMap);
                         Log.i("DataManager", "DataTask.onPostExecute() - invoked listener " + callback.toString());
                     }
                     else
@@ -142,12 +163,7 @@ public class DataManager implements ApiManager.OnApiTaskCompleteCallback {
                 }
                 Log.i("ApiManager", "DataTask.onPostExecute() - invoked " + onDataTaskCompletedListeners.size() + " listeners");
             }
-            else
-            {
-                waitList.addAll(mapPartStates);
-                Log.i("DataManager", "DataTask.onPostExecute() - 0 listeners, putting results on hold");
-            }
-            Log.i("DataManager", "DataTask.onPostExecute() - completed " + mapPartStates.size() + "data tasks");
+            Log.i("DataManager", "DataTask.onPostExecute() - completed " + hashMap.size() + "data tasks");
         }
     }
 
@@ -167,22 +183,24 @@ public class DataManager implements ApiManager.OnApiTaskCompleteCallback {
         /**
          * Method that gets invoked on completion.
          * */
-        void onDataTaskCompleted(ArrayList<MapPartState> mapPartStates);
+        void onDataTaskCompleted(HashMap<String, MapData> hashMap);
     }
 
     /**
-     * Defines a callback for on handling ApiResults but the callback only will be invoked when the condition is met.
-     * TODO: This interface is not in use, and is not implemented in DataManger.
+     *
      * */
-    public interface OnConditionalApiResultHandlingCallback
+    public interface OnCertainKeywordApiResult
     {
+        /**
+         *
+         * */
+        String getKeyword();
 
-        Predicate getCondition();
-
-        void OnApiResultConditionMet(ApiResult result);
+        /**
+         *
+         * */
+        void onConditionMet(ApiResult result);
 
     }
-
-
 
 }

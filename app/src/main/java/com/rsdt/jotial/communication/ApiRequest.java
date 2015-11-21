@@ -27,7 +27,7 @@ public class ApiRequest {
     public ApiRequest(URL url, String data)
     {
         this.url = url;
-        this.data = data;
+        this.data = null;
     }
 
     /**

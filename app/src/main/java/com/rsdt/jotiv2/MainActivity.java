@@ -19,11 +19,14 @@ import android.widget.ImageButton;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.rsdt.jotial.JotiApp;
+import com.rsdt.jotial.communication.ApiRequest;
+import com.rsdt.jotial.communication.LinkBuilder;
+import com.rsdt.jotial.communication.area348.Area348API;
 import com.rsdt.jotial.mapping.area348.JotiInfoWindowAdapter;
 import com.rsdt.jotial.mapping.area348.MapManager;
-import com.rsdt.jotial.mapping.area348.data.MapData;
-import com.rsdt.jotial.mapping.area348.behaviour.VosInfoBehaviour;
 import com.rsdt.jotiv2.fragments.JotiMapFragment;
 import com.rsdt.jotiv2.fragments.JotiPreferenceFragment;
 
@@ -38,6 +41,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -51,7 +55,7 @@ public class MainActivity extends AppCompatActivity
                         0.5f);
                 rotate.setDuration(2000);
                 rotate.setRepeatCount(Animation.INFINITE);
-                ((ImageButton)view).startAnimation(rotate);
+                view.startAnimation(rotate);
                 view.setEnabled(false);
                 mapManager.update();
             }
@@ -74,28 +78,37 @@ public class MainActivity extends AppCompatActivity
             }
         }
 
-        if(savedInstanceState != null)
-        {
-     /*       MapDataPair<MarkerOptions> pair2 = savedInstanceState.getBundle("pairBundle").getParcelable("pair");
-            System.out.print("");
-            System.out.print("LOL");*/
+        /**
+         * Initialize maps, without it we can't use certain classes and methods. Such as BitmapDescriptorFactory.
+         * */
+        MapsInitializer.initialize(JotiApp.getContext());
 
+        /**
+         * Get the ApiManager and add a listener to it, the listener is the data manager that will process the data for us.
+         * */
+        MapManager.getApiManager().addListener(MapManager.getDataManager());
 
-            MapData mapData = savedInstanceState.getParcelable("mapData");
-            System.out.print("");
-        }
+        /**
+         * Set the root of the LinkBuilder to the Area348's one.
+         * */
+        LinkBuilder.setRoot(Area348API.root);
+
+        /**
+         * Queue in some requests.
+         * */
+        MapManager.getApiManager().queue(new ApiRequest(LinkBuilder.build(new String[]{"vos", "a", "all"}), null));
+        MapManager.getApiManager().queue(new ApiRequest(LinkBuilder.build(new String[]{"sc", "all"}), null));
+
+        /**
+         * Preform the requests.
+         * */
+        MapManager.getApiManager().preform();
+
     }
 
 
-    String data = "[{\"id\":\"30\",\"datetime\":\"2015-10-18 14:27:29\",\"latitude\":\"52.180247501296\",\"longitude\":\"6.1351861143609\",\"team\":\"a\",\"team_naam\":\"Alpha\",\"opmerking\":\"\",\"gebruiker\":\"31\"}]";
-
     public void onSaveInstanceState(Bundle savedInstanceState) {
-   /*     MapDataPair<MarkerOptions> pair = new MapDataPair<>(new MarkerOptions(), new ArrayList<BaseInfo>());
-        Bundle bundle = new Bundle();
-        bundle.putParcelable("pair", pair);
-        savedInstanceState.putBundle("pairBundle", bundle);*/
-        MapData mapData = MapData.from(data, new VosInfoBehaviour(null));
-        savedInstanceState.putParcelable("mapData", mapData);
+
     }
 
     @Override
@@ -119,7 +132,7 @@ public class MainActivity extends AppCompatActivity
     public void onMapReady(GoogleMap googleMap) {
         mapManager = new MapManager(googleMap);
         mapManager.sync();
-        googleMap.setInfoWindowAdapter(new JotiInfoWindowAdapter(this.getLayoutInflater(), mapManager));
+        googleMap.setInfoWindowAdapter(new JotiInfoWindowAdapter(this.getLayoutInflater(), mapManager.getMapBehaviourManager()));
     }
 
     @Override
@@ -207,7 +220,6 @@ public class MainActivity extends AppCompatActivity
             mapManager.destroy();
             mapManager = null;
         }
-
     }
 
 }
