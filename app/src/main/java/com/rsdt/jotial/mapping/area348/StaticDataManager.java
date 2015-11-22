@@ -32,6 +32,7 @@ public class StaticDataManager extends DataManager {
         {
             listener.onDataTaskCompleted(waitList);
             waitList.clear();
+            Log.i("DataManager", "addListener() - invoked the new listener with the queued data");
         }
     }
 
@@ -40,6 +41,7 @@ public class StaticDataManager extends DataManager {
         StaticDataTask dataTask = new StaticDataTask();
         dataTask.execute(results.toArray(new ApiResult[results.size()]));
         tasks.add(dataTask);
+        Log.i("DataManager", " onApiTaskCompleted() - executing " + results.size() + " data tasks");
     }
 
     /**

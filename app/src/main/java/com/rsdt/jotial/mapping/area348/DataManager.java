@@ -8,6 +8,7 @@ import com.rsdt.jotial.communication.ApiResult;
 import com.rsdt.jotial.communication.area348.Area348API;
 
 import com.rsdt.jotial.mapping.area348.behaviour.FotoOpdrachtMapBehaviour;
+import com.rsdt.jotial.mapping.area348.behaviour.HunterMapBehaviour;
 import com.rsdt.jotial.mapping.area348.behaviour.ScoutingGroepMapBehaviour;
 import com.rsdt.jotial.mapping.area348.behaviour.VosMapBehaviour;
 import com.rsdt.jotial.mapping.area348.data.MapData;
@@ -40,6 +41,7 @@ public class DataManager implements ApiManager.OnApiTaskCompleteCallback {
     public void addListener(OnDataTaskCompletedCallback listener)
     {
         onDataTaskCompletedListeners.add(listener);
+        Log.i("DataManager", "addListener() - added listener " + listener.toString());
     }
 
     /**
@@ -48,6 +50,7 @@ public class DataManager implements ApiManager.OnApiTaskCompleteCallback {
     public void removeListener(OnDataTaskCompletedCallback listener)
     {
         onDataTaskCompletedListeners.remove(listener);
+        Log.i("DataManager", "removeListener() - removed listener " + listener.toString());
     }
 
     @Override
@@ -58,6 +61,7 @@ public class DataManager implements ApiManager.OnApiTaskCompleteCallback {
         DataTask dataTask = new DataTask();
         dataTask.execute(results.toArray(new ApiResult[results.size()]));
         tasks.add(dataTask);
+        Log.i("DataManager", "onApiTaskCompleted() - executing " + results.size() + " data tasks");
     }
 
     /**
@@ -114,7 +118,7 @@ public class DataManager implements ApiManager.OnApiTaskCompleteCallback {
                         dataHashMap.put("vos", VosMapBehaviour.toMapData(currentResult.getData()));
                         break;
                     case "hunter":
-
+                        dataHashMap.put("hunter", HunterMapBehaviour.toMapData(currentResult.getData()));
                         break;
                     case "sc":
                         dataHashMap.put("sc", ScoutingGroepMapBehaviour.toMapData(currentResult.getData()));
@@ -125,7 +129,6 @@ public class DataManager implements ApiManager.OnApiTaskCompleteCallback {
 
                 }
             }
-
             return dataHashMap;
         }
 
@@ -163,7 +166,7 @@ public class DataManager implements ApiManager.OnApiTaskCompleteCallback {
                 }
                 Log.i("ApiManager", "DataTask.onPostExecute() - invoked " + onDataTaskCompletedListeners.size() + " listeners");
             }
-            Log.i("DataManager", "DataTask.onPostExecute() - completed " + hashMap.size() + "data tasks");
+            Log.i("DataManager", "DataTask.onPostExecute() - completed " + hashMap.size() + " data tasks");
         }
     }
 

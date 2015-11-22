@@ -10,6 +10,7 @@ import android.view.View;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
+import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.maps.android.clustering.ClusterManager;
 
@@ -18,9 +19,13 @@ import com.rsdt.jotial.UpdateService;
 import com.rsdt.jotial.communication.ApiResult;
 import com.rsdt.jotial.communication.StaticApiManger;
 import com.rsdt.jotial.data.structures.area348.receivables.ScoutingGroepInfo;
+import com.rsdt.jotial.mapping.area348.behaviour.FotoOpdrachtMapBehaviour;
+import com.rsdt.jotial.mapping.area348.behaviour.HunterMapBehaviour;
+import com.rsdt.jotial.mapping.area348.behaviour.MapBehaviour;
 import com.rsdt.jotial.mapping.area348.behaviour.MapBehaviourManager;
 import com.rsdt.jotial.mapping.area348.behaviour.ScoutingGroepMapBehaviour;
 import com.rsdt.jotial.mapping.area348.behaviour.VosMapBehaviour;
+import com.rsdt.jotial.mapping.area348.behaviour.events.MapBehaviourEvent;
 import com.rsdt.jotial.mapping.area348.clustering.ScoutingGroepInfoRenderer;
 import com.rsdt.jotial.mapping.area348.data.MapData;
 
@@ -55,6 +60,8 @@ public class MapManager implements JotiInfoWindowAdapter.OnGetInfoWindowCallback
         scClusterManager.setRenderer(new ScoutingGroepInfoRenderer(JotiApp.getContext(), googleMap, scClusterManager));
         googleMap.setOnCameraChangeListener(scClusterManager);
         googleMap.setOnMarkerClickListener(scClusterManager);
+
+        setupSpecialEvents();
     }
 
     /**
@@ -120,6 +127,86 @@ public class MapManager implements JotiInfoWindowAdapter.OnGetInfoWindowCallback
 
     }
 
+    /**
+     * Circle to indicate something.
+     * */
+    Circle indicatorCircle;
+
+    private void setupSpecialEvents()
+    {
+        /**
+         * Register the special event that defines the special circles on a marker.
+         * */
+        mapBehaviourManager.getsEventRaiser().getEvents().add(new MapBehaviourEvent<Marker>(MapBehaviourEvent.MAP_BEHAVIOUR_EVENT_TRIGGER_INFO_WINDOW) {
+            @Override
+            public boolean apply(Marker marker) {
+                return (marker.getTitle().startsWith("vos") || marker.getTitle().startsWith("sc"));
+            }
+
+            @Override
+            public void onConditionMet(Object[] args) {
+
+                Marker marker = (Marker) args[1];
+
+                /**
+                 * Checks if the indicatorCircle is null, if not compare to center.
+                 * */
+                if (indicatorCircle != null) {
+                    /**
+                     * Checks if the last circle is placed around the current marker, if so remove the circle.
+                     * */
+                    if (indicatorCircle.getCenter().equals(marker.getPosition())) {
+                        /**
+                         * Remove the current indicator circle.
+                         * */
+                        indicatorCircle.remove();
+                        indicatorCircle = null;
+                        return;
+                    }
+                    indicatorCircle.remove();
+                }
+
+                CircleOptions cOptions = new CircleOptions();
+                cOptions.center(marker.getPosition());
+
+                String[] strArgs = marker.getTitle().split(" ");
+
+                switch (strArgs[0]) {
+                    case "vos":
+                        /**
+                         * TODO: Make constants for speed and other settings.
+                         * */
+                        try {
+                            String dateTime = strArgs[3] + " " + strArgs[4];
+                            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
+                            Date date = dateFormat.parse(dateTime);
+
+                            long duration = new Date().getTime() - date.getTime();
+
+                            float diffInHours = TimeUnit.MILLISECONDS.toSeconds(duration) / 60f / 60f;
+
+                            if (diffInHours > 30)
+                                diffInHours = 30;
+                            cOptions.radius(diffInHours * 6000);
+                        } catch (Exception e) {
+                            Log.e("MapManger", "onGetInfoWindow(View, Marker) - circle radius calculation with vos's date failed");
+                        }
+
+                        cOptions.strokeWidth(VosMapBehaviour.VOS_CIRCLE_STROKE_WIDTH);
+                        cOptions.strokeColor(VosMapBehaviour.VOS_CIRCLE_STROKE_COLOR);
+                        cOptions.fillColor(MapManager.parse(strArgs[1], VosMapBehaviour.VOS_CIRCLE_FILL_COLOR_ALPHA));
+                        break;
+                    case "sc":
+                        cOptions.radius(ScoutingGroepMapBehaviour.SCOUTING_GROEP_CIRCLE_RADIUS);
+                        cOptions.strokeWidth(ScoutingGroepMapBehaviour.SCOUTING_GROEP_CIRCLE_STROKE_WIDTH);
+                        cOptions.strokeColor(ScoutingGroepMapBehaviour.SCOUTING_GROEP_CIRCLE_STROKE_COLOR);
+                        cOptions.fillColor(MapManager.parse(strArgs[1].toLowerCase(), ScoutingGroepMapBehaviour.SCOUTING_GROEP_CIRCLE_FILL_COLOR_ALPHA));
+                        break;
+                }
+                indicatorCircle = googleMap.addCircle(cOptions);
+            }
+        });
+    }
 
 
     Circle circle;
@@ -213,14 +300,19 @@ public class MapManager implements JotiInfoWindowAdapter.OnGetInfoWindowCallback
                 case "vos":
                     this.mapBehaviourManager.add(new VosMapBehaviour(entry.getValue(), googleMap));
                     break;
+                case "hunter":
+                    this.mapBehaviourManager.add(new HunterMapBehaviour(entry.getValue(), googleMap));
+                    break;
                 case "sc":
                     this.mapBehaviourManager.add(new ScoutingGroepMapBehaviour(entry.getValue(), googleMap));
+                    break;
+                case "foto":
+                    this.mapBehaviourManager.add(new FotoOpdrachtMapBehaviour(entry.getValue(), googleMap));
                     break;
             }
         }
     }
 
-    @Override
     public DataManager.OnCertainKeywordApiResult getSpecial() {
         return new DataManager.OnCertainKeywordApiResult() {
             @Override

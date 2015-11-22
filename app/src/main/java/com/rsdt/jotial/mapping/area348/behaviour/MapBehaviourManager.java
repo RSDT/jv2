@@ -7,6 +7,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.rsdt.jotial.mapping.area348.JotiInfoWindowAdapter;
 import com.rsdt.jotial.mapping.area348.behaviour.events.EventTrigger;
 import com.rsdt.jotial.mapping.area348.behaviour.events.MapBehaviourEvent;
+import com.rsdt.jotial.mapping.area348.behaviour.events.MapBehaviourEventRaiser;
 
 import java.util.ArrayList;
 
@@ -26,21 +27,22 @@ public class MapBehaviourManager extends ArrayList<MapBehaviour> implements Joti
 
     }
 
-    /**
-     * The special events of the MapBehaviourManager.
-     * */
-    private ArrayList<MapBehaviourEvent> sEvents = new ArrayList<>();
 
     /**
-     * Gets the special events of the MapBehaviourManager.
+     * The event raiser for the special events.
      * */
-    public ArrayList<MapBehaviourEvent> getsEvents() {
-        return sEvents;
+    private MapBehaviourEventRaiser sEventRaiser = new MapBehaviourEventRaiser();
+
+    /**
+     * Gets the special event raiser.
+     * */
+    public MapBehaviourEventRaiser getsEventRaiser() {
+        return sEventRaiser;
     }
 
     @Override
     public void onGetInfoWindow(View view, Marker marker) {
-        raiseEvent(new EventTrigger(MapBehaviourEvent.MAP_BEHAVIOUR_EVENT_TRIGGER_INFO_WINDOW, marker, new Object[]{ view, marker }));
+        raiseEvent(new EventTrigger(MapBehaviourEvent.MAP_BEHAVIOUR_EVENT_TRIGGER_INFO_WINDOW, marker, new Object[]{view, marker}));
     }
 
     public void raiseEvent(EventTrigger eventTrigger)
@@ -57,12 +59,12 @@ public class MapBehaviourManager extends ArrayList<MapBehaviour> implements Joti
              * */
             this.get(i).eventRaiser.raiseEvent(eventTrigger);
         }
+        this.sEventRaiser.raiseEvent(eventTrigger);
     }
 
     public void destroy()
     {
         super.clear();
-        sEvents.clear();
     }
 
 

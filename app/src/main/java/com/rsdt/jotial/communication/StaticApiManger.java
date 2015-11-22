@@ -46,7 +46,7 @@ public class StaticApiManger extends ApiManager {
         {
             listener.onApiTaskCompleted(waitList);
             waitList.clear();
-            Log.i("ApiManager", "ApiTask.addListener() - invoked the new listener with the queued data");
+            Log.i("ApiManager", "addListener() - invoked the new listener with the queued data");
         }
     }
 
@@ -57,7 +57,7 @@ public class StaticApiManger extends ApiManager {
         StaticApiTask task = new StaticApiTask();
         task.execute(pending.toArray(new ApiRequest[pending.size()]));
         tasks.add(task);
-        Log.i("ApiManager", "ApiTask.onConditionMet() - preforming  " + pending.size() + " ApiRequests");
+        Log.i("ApiManager", "preform() - preforming  " + pending.size() + " ApiRequests");
     }
 
     /**
@@ -77,7 +77,7 @@ public class StaticApiManger extends ApiManager {
              * */
             if(onApiTaskCompleteListeners.isEmpty()) {
                 waitList.addAll(results);
-                Log.i("ApiManager", "ApiTask.onPostExecute() - 0 listeners, putting results on the wait list");
+                Log.i("ApiManager", "onPostExecute() - 0 listeners, putting results on the wait list");
             }
         }
     }

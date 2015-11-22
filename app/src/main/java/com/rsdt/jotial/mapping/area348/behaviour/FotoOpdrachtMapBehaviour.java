@@ -4,18 +4,24 @@ import android.view.View;
 import android.widget.TextView;
 
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.rsdt.jotial.data.structures.area348.receivables.BaseInfo;
 import com.rsdt.jotial.data.structures.area348.receivables.FotoOpdrachtInfo;
 import com.rsdt.jotial.mapping.area348.behaviour.events.MapBehaviourEvent;
 import com.rsdt.jotial.mapping.area348.data.MapData;
+import com.rsdt.jotial.mapping.area348.data.MapDataPair;
 import com.rsdt.jotiv2.R;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * @author Dingenis Sieger Sinke
  * @version 1.0
  * @since 21-11-2015
- * Description...
+ * Defines the behaviour of the FotoOpdracht.
  */
 public class FotoOpdrachtMapBehaviour extends MapBehaviour {
 
@@ -45,14 +51,44 @@ public class FotoOpdrachtMapBehaviour extends MapBehaviour {
 
                 ((TextView)view.findViewById(R.id.infoWindow_infoType)).setText("FotoOpdrachtInfo");
 
+                ((TextView)view.findViewById(R.id.infoWindow_naam)).setText(associatedInfo.naam);
+
+                ((TextView)view.findViewById(R.id.infoWindow_dateTime_adres)).setText(associatedInfo.info);
+
+                ((TextView)view.findViewById(R.id.infoWindow_coordinaat)).setText(associatedInfo.latitude + " , " + associatedInfo.longitude);
             }
         });
     }
 
 
+    /**
+     * Deserializes a string of data to the FotoOpdrachtMapBehaviour MapData.
+     * TODO: Set icons.
+     * */
     public static final MapData toMapData(String data)
     {
-        return null;
+
+         /**
+         * Create a buffer to store the data.
+         * */
+        MapData buffer = MapData.empty();
+
+        /**
+         * Deserialize the array of FotoOpdrachtInfo.
+         * */
+        FotoOpdrachtInfo[] fotoOpdrachten = FotoOpdrachtInfo.fromJsonArray(data);
+
+        /**
+         * Loops through each FotoOpdrachtInfo.
+         * */
+        for (int i = 0; i < fotoOpdrachten.length; i++) {
+            MarkerOptions mOptions = new MarkerOptions();
+            mOptions.anchor(0.5f, 0.5f);
+            mOptions.position(new LatLng(fotoOpdrachten[i].latitude, fotoOpdrachten[i].longitude));
+            mOptions.title(buildInfoTitle(new String[]{ "foto" }," "));
+            buffer.getMarkers().add(new MapDataPair<>(mOptions, new ArrayList<BaseInfo>(Arrays.asList(fotoOpdrachten[i]))));
+        }
+        return buffer;
     }
 
 

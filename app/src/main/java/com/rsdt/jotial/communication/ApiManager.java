@@ -68,7 +68,7 @@ public class ApiManager {
     public void addListener(OnApiTaskCompleteCallback listener)
     {
         onApiTaskCompleteListeners.add(listener);
-        Log.i("ApiManager", "ApiTask.addListener() - added listener " + listener.toString());
+        Log.i("ApiManager", "addListener() - added listener " + listener.toString());
     }
 
     /**
@@ -78,7 +78,7 @@ public class ApiManager {
     public void removeListener(OnApiTaskCompleteCallback listener)
     {
         onApiTaskCompleteListeners.remove(listener);
-        Log.i("ApiManager", "ApiTask.removeListener() - removed listener " + listener.toString());
+        Log.i("ApiManager", "removeListener() - removed listener " + listener.toString());
     }
 
     /**
@@ -101,7 +101,7 @@ public class ApiManager {
         ApiTask task = new ApiTask();
         task.execute(pending.toArray(new ApiRequest[pending.size()]));
         tasks.add(task);
-        Log.i("ApiManager", "ApiTask.onConditionMet() - preforming  " + pending.size() + " ApiRequests");
+        Log.i("ApiManager", "preform() - preforming  " + pending.size() + " ApiRequests");
     }
 
     /**

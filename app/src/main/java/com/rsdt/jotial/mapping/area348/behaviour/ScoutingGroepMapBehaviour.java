@@ -86,23 +86,13 @@ public class ScoutingGroepMapBehaviour extends MapBehaviour {
              * */
             MarkerOptions mOptions = new MarkerOptions();
             mOptions.position(new LatLng(groepen[i].latitude, groepen[i].longitude));
-            mOptions.title(buildInfoTitle(new String[]{"sc", groepen[i].deelgebied }, ";"));
+            mOptions.title(buildInfoTitle(new String[]{"sc", groepen[i].deelgebied }, " "));
             mOptions.anchor(0.5f, 0.5f);
-
-            /**
-             * Setups the preset circle.
-             * */
-            CircleOptions cOptions = new CircleOptions();
-            cOptions.radius(SCOUTING_GROEP_CIRCLE_RADIUS);
-            cOptions.strokeColor(SCOUTING_GROEP_CIRCLE_STROKE_COLOR);
-            cOptions.strokeWidth(SCOUTING_GROEP_CIRCLE_STROKE_WIDTH);
-            cOptions.center(new LatLng(groepen[i].latitude, groepen[i].longitude));
 
             /**
              * Add the circle and the marker to the offline collection and to the map.
              * */
             buffer.getMarkers().add(new MapDataPair<>(mOptions, new ArrayList<BaseInfo>(Arrays.asList(groepen[i]))));
-            buffer.getCircles().add(new MapDataPair<>(cOptions, new ArrayList<BaseInfo>(Arrays.asList(groepen[i]))));
         }
         return buffer;
     }
@@ -121,5 +111,10 @@ public class ScoutingGroepMapBehaviour extends MapBehaviour {
      * Defines the stroke width of the ScoutingGroep circle.
      * */
     public static final int SCOUTING_GROEP_CIRCLE_STROKE_WIDTH = 3;
+
+    /**
+     * Defines the how much the fill color should be alphed.
+     * */
+    public static final int SCOUTING_GROEP_CIRCLE_FILL_COLOR_ALPHA = 98;
 
 }

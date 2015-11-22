@@ -1,5 +1,6 @@
 package com.rsdt.jotial.mapping.area348.behaviour;
 
+import android.graphics.Color;
 import android.view.View;
 import android.widget.TextView;
 
@@ -129,6 +130,20 @@ public class VosMapBehaviour extends MapBehaviour {
      * */
     public static final int VOS_POLYLINE_WIDTH = 2;
 
+    /**
+     * Defines the stroke width of the vos circle.
+     * */
+    public static final int VOS_CIRCLE_STROKE_WIDTH = 3;
+
+    /**
+     * Defines the stroke color of the vos circle.
+     * */
+    public static final int VOS_CIRCLE_STROKE_COLOR = Color.BLACK;
+
+    /**
+     * Defines how much the fill color should be alphed.
+     * */
+    public static final int VOS_CIRCLE_FILL_COLOR_ALPHA = 98;
 
 }
 
