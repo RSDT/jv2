@@ -2,6 +2,10 @@ package com.rsdt.jotial.communication;
 
 import android.util.Log;
 
+import com.android.internal.util.Predicate;
+import com.rsdt.jotial.JotiApp;
+import com.rsdt.jotiv2.Tracker;
+
 import java.util.ArrayList;
 
 /**
@@ -25,28 +29,17 @@ public class StaticApiManger extends ApiManager {
 
     }
 
-    /**
-     * Initializes a new instance of StaticApiManager.
-     *
-     * @param apiTaskCompleteCallback The callback to register.
-     * */
-    public StaticApiManger(OnApiTaskCompleteCallback apiTaskCompleteCallback)
-    {
-        super(apiTaskCompleteCallback);
-    }
-
     @Override
-    public void addListener(OnApiTaskCompleteCallback listener) {
-        super.addListener(listener);
+    public void addListener(OnApiTaskCompleteCallback listener, Predicate<ApiResult> filter) {
+        super.addListener(listener, filter);
 
         /**
          * Check if the wait list is empty, if not handle the results that were put on wait.
          * */
         if(!waitList.isEmpty())
         {
-            listener.onApiTaskCompleted(waitList);
+            new StaticResultProcessingTask().execute(waitList.toArray(new ApiResult[waitList.size()]));
             waitList.clear();
-            Log.i("ApiManager", "addListener() - invoked the new listener with the queued data");
         }
     }
 
@@ -54,6 +47,7 @@ public class StaticApiManger extends ApiManager {
     public void preform() {
         pending.addAll(queued);
         queued.clear();
+
         StaticApiTask task = new StaticApiTask();
         task.execute(pending.toArray(new ApiRequest[pending.size()]));
         tasks.add(task);
@@ -70,15 +64,45 @@ public class StaticApiManger extends ApiManager {
     {
         @Override
         protected void onPostExecute(ArrayList<ApiResult> results) {
-            super.onPostExecute(results);
+            /**
+             * Clear the pending and completed list, the completed list only contains one ApiTask's results.
+             * TODO: Implement completed to file method? To maintain data.
+             * */
+            pending.clear();
+            completed.clear();
+            completed.addAll(results);
 
             /**
-             * Checks if there are listeners, if not put the results on the wait list to be posted later on.
+             * Inform the tracker that fetching is completed.
              * */
-            if(onApiTaskCompleteListeners.isEmpty()) {
-                waitList.addAll(results);
-                Log.i("ApiManager", "onPostExecute() - 0 listeners, putting results on the wait list");
+            JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_APIMANAGER_FETCHING_COMPLETED, "ApiManager", "Fetching completed."));
+
+            new StaticResultProcessingTask().execute(results.toArray(new ApiResult[results.size()]));
+            Log.i("ApiManager", "ApiTask.onPostExecute() - started running StaticResultProcessingTask on results");
+            Log.i("ApiManager", "ApiTask.onPostExecute() - completed " + results.size() + " tasks");
+        }
+    }
+
+    /**
+     * @author Dingenis Sieger Sinke
+     * @version 1.0
+     * @since 20-11-2015
+     * Class that defines the static behaviour for the ResultProcessingTask.
+     * */
+    private class StaticResultProcessingTask extends ResultProcessingTask
+    {
+        @Override
+        protected void onPostExecute(ArrayList<ApiResult> apiResults) {
+            super.onPostExecute(apiResults);
+
+            /**
+             * If there are unhandled results add them to the waiting list.
+             * */
+            if(!apiResults.isEmpty())
+            {
+                waitList.addAll(apiResults);
             }
         }
     }
+
 }

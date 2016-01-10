@@ -66,6 +66,7 @@ public class HunterInfo extends BaseInfo implements Parcelable {
 
     /**
      * Deserializes a HunterInfo from JSON.
+     *
      * @param json The JSON where the HunterInfo should be deserialized from.
      * @return A HunterInfo.
      */
@@ -77,6 +78,7 @@ public class HunterInfo extends BaseInfo implements Parcelable {
 
     /**
      * Deserializes a array of HunterInfo from JSON.
+     *
      * @param json The JSON where the array of HunterInfo should be deserialized from.
      * @return A array of HunterInfo.
      */
@@ -88,6 +90,7 @@ public class HunterInfo extends BaseInfo implements Parcelable {
 
     /**
      * Deserializes a 2D array of HunterInfo from JSON.
+     *
      * @param json The JSON where the 2D array of HunterInfo should be deserialized from.
      * @return A 2D array of HunterInfo.
      */

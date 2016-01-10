@@ -10,6 +10,8 @@ import com.rsdt.jotial.mapping.area348.behaviour.events.MapBehaviourEvent;
 import com.rsdt.jotial.mapping.area348.behaviour.events.MapBehaviourEventRaiser;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author Dingenis Sieger Sinke
@@ -17,7 +19,7 @@ import java.util.ArrayList;
  * @since 20-11-2015
  * Manages the behaviours.
  */
-public class MapBehaviourManager extends ArrayList<MapBehaviour> implements JotiInfoWindowAdapter.OnGetInfoWindowCallback {
+public class MapBehaviourManager extends HashMap<String, MapBehaviour> implements JotiInfoWindowAdapter.OnGetInfoWindowCallback {
 
     /**
      * Initializes a new instance of MapBehaviourManager.
@@ -26,7 +28,6 @@ public class MapBehaviourManager extends ArrayList<MapBehaviour> implements Joti
     {
 
     }
-
 
     /**
      * The event raiser for the special events.
@@ -50,15 +51,16 @@ public class MapBehaviourManager extends ArrayList<MapBehaviour> implements Joti
         Log.i("MapBehaviourEventRaiser", "raiseEvent() - event with trigger: " + eventTrigger.getTrigger() + ", applier: " + eventTrigger.getApplier().toString());
 
         /**
-         * Loop through each behaviour.
+         * Loop through each entry.
          * */
-        for(int i = 0; i < this.size(); i++)
+        for(Map.Entry<String, MapBehaviour> entry : this.entrySet())
         {
             /**
-             * Raises the event on the EventRaiser, he will raise it on.
+             * Raise the event on the behaviour via the behaviour's event raiser.
              * */
-            this.get(i).eventRaiser.raiseEvent(eventTrigger);
+            entry.getValue().eventRaiser.raiseEvent(eventTrigger);
         }
+
         this.sEventRaiser.raiseEvent(eventTrigger);
     }
 

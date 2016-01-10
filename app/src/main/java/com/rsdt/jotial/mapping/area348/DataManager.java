@@ -3,6 +3,7 @@ package com.rsdt.jotial.mapping.area348;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import com.rsdt.jotial.JotiApp;
 import com.rsdt.jotial.communication.ApiManager;
 import com.rsdt.jotial.communication.ApiResult;
 import com.rsdt.jotial.communication.area348.Area348API;
@@ -12,6 +13,7 @@ import com.rsdt.jotial.mapping.area348.behaviour.HunterMapBehaviour;
 import com.rsdt.jotial.mapping.area348.behaviour.ScoutingGroepMapBehaviour;
 import com.rsdt.jotial.mapping.area348.behaviour.VosMapBehaviour;
 import com.rsdt.jotial.mapping.area348.data.MapData;
+import com.rsdt.jotiv2.Tracker;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -115,7 +117,7 @@ public class DataManager implements ApiManager.OnApiTaskCompleteCallback {
                 switch(args[1])
                 {
                     case "vos":
-                        dataHashMap.put("vos", VosMapBehaviour.toMapData(currentResult.getData()));
+                        dataHashMap.put("vos " + args[2], VosMapBehaviour.toMapData(currentResult.getData()));
                         break;
                     case "hunter":
                         dataHashMap.put("hunter", HunterMapBehaviour.toMapData(currentResult.getData()));
@@ -134,6 +136,12 @@ public class DataManager implements ApiManager.OnApiTaskCompleteCallback {
 
         @Override
         protected void onPostExecute(HashMap<String,MapData> hashMap) {
+
+            /**
+             * Inform the tracker that processing is completed.
+             * */
+            JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_DATAMANAGER_PROCESSING_COMPLETED, "DataManager", "Processing of data completed."));
+
             /**
              * Buffer to hold listeners that must be removed.
              * */
@@ -178,6 +186,7 @@ public class DataManager implements ApiManager.OnApiTaskCompleteCallback {
 
     }
 
+
     /**
      * Defines a callback for on data task completion.
      * */
@@ -189,21 +198,5 @@ public class DataManager implements ApiManager.OnApiTaskCompleteCallback {
         void onDataTaskCompleted(HashMap<String, MapData> hashMap);
     }
 
-    /**
-     *
-     * */
-    public interface OnCertainKeywordApiResult
-    {
-        /**
-         *
-         * */
-        String getKeyword();
-
-        /**
-         *
-         * */
-        void onConditionMet(ApiResult result);
-
-    }
-
+    public static final String TRACKER_DATAMANAGER_PROCESSING_COMPLETED = "TRACKER_DATAMANAGER_PROCESSING_COMPLETED";
 }

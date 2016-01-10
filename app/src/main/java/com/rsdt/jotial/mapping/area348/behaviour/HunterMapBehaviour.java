@@ -12,6 +12,7 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.rsdt.jotial.data.structures.area348.receivables.BaseInfo;
 import com.rsdt.jotial.data.structures.area348.receivables.HunterInfo;
 import com.rsdt.jotial.mapping.area348.behaviour.events.MapBehaviourEvent;
+import com.rsdt.jotial.mapping.area348.data.GraphicalMapData;
 import com.rsdt.jotial.mapping.area348.data.MapData;
 import com.rsdt.jotial.mapping.area348.data.MapDataPair;
 import com.rsdt.jotiv2.R;
@@ -23,7 +24,7 @@ import java.util.Arrays;
  * @author Dingenis Sieger Sinke
  * @version 1.0
  * @since 22-11-2015
- * Description...
+ * Defines the behaviour for the Hunter.
  */
 public class HunterMapBehaviour extends MapBehaviour {
 
@@ -36,6 +37,11 @@ public class HunterMapBehaviour extends MapBehaviour {
     public HunterMapBehaviour(MapData mapData, GoogleMap googleMap) {
         super(mapData, googleMap);
 
+        /**
+         * Adds a special event listener.
+         *
+         * TODO: Use Android Resources for constant text.
+         * */
         super.eventRaiser.getEvents().add(new MapBehaviourEvent<Marker>(MapBehaviourEvent.MAP_BEHAVIOUR_EVENT_TRIGGER_INFO_WINDOW) {
             @Override
             public boolean apply(Marker marker) {
@@ -63,7 +69,36 @@ public class HunterMapBehaviour extends MapBehaviour {
         });
     }
 
-    public static final MapData toMapData(String data)
+    @Override
+    public void merge(GraphicalMapData other) {
+
+        /**
+         * Clear our own marker list and add all the other's.
+         * */
+        for(int i = 0; i < markers.size(); i++)
+        {
+            markers.get(i).remove();
+        }
+        markers.clear();
+        markers.addAll(other.getMarkers());
+
+        /**
+         * Clear our own polyline list and add all the other's.
+         * */
+        for(int i = 0; i < polylines.size(); i++)
+        {
+            markers.get(i).remove();
+        }
+        polylines.clear();
+        polylines.addAll(other.getPolylines());
+
+        /**
+         * Destroy the other, since it's no longer needed.
+         * */
+        other.destroy();
+    }
+
+    public static MapData toMapData(String data)
     {
         /**
          * Create a buffer to hold the data.
@@ -119,6 +154,13 @@ public class HunterMapBehaviour extends MapBehaviour {
         return buffer;
     }
 
+    /**
+     * Merges the two map data.
+     * */
+    public static MapData merge(MapData mD1, MapData mD2)
+    {
+        return null;
+    }
 
     /**
      * Defines the width of the Hunter polyline.

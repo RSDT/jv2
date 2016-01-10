@@ -3,12 +3,18 @@ package com.rsdt.jotial.communication;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import com.android.internal.util.Predicate;
+import com.rsdt.jotial.JotiApp;
+import com.rsdt.jotiv2.Tracker;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author Dingenis Sieger Sinke
@@ -39,9 +45,9 @@ public class ApiManager {
     protected ArrayList<ApiTask> tasks = new ArrayList<>();
 
     /**
-     * A list with listeners.
+     * The list of listeners and there associated encapsulations.
      * */
-    protected ArrayList<OnApiTaskCompleteCallback> onApiTaskCompleteListeners = new ArrayList<>();
+    protected HashMap<OnApiTaskCompleteCallback, ListenerEncapsulation> listeners = new HashMap<>();
 
     /**
      * Initializes a new instance of ApiManager.
@@ -52,22 +58,14 @@ public class ApiManager {
     }
 
     /**
-     * Initializes a new instance of ApiManager.
-     *
-     * @param apiTaskCompleteCallback The callback to register.
-     * */
-    public ApiManager(OnApiTaskCompleteCallback apiTaskCompleteCallback)
-    {
-        onApiTaskCompleteListeners.add(apiTaskCompleteCallback);
-    }
-
-    /**
      * Adds a listener to the listeners.
+     *
      * @param listener The listener to add.
+     * @param filter  The filter that should be applied, null for none.
      * */
-    public void addListener(OnApiTaskCompleteCallback listener)
+    public void addListener(OnApiTaskCompleteCallback listener, Predicate<ApiResult> filter)
     {
-        onApiTaskCompleteListeners.add(listener);
+        listeners.put(listener, new ListenerEncapsulation(filter));
         Log.i("ApiManager", "addListener() - added listener " + listener.toString());
     }
 
@@ -77,7 +75,7 @@ public class ApiManager {
      * */
     public void removeListener(OnApiTaskCompleteCallback listener)
     {
-        onApiTaskCompleteListeners.remove(listener);
+        listeners.remove(listener);
         Log.i("ApiManager", "removeListener() - removed listener " + listener.toString());
     }
 
@@ -177,38 +175,94 @@ public class ApiManager {
             completed.clear();
             completed.addAll(results);
 
-            ArrayList<OnApiTaskCompleteCallback> mustBeRemoved = new ArrayList<>();
+            /**
+             * Inform the tracker that fetching is completed.
+             * */
+            JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_APIMANAGER_FETCHING_COMPLETED, "ApiManager", "Fetching completed."));
+
+            new ResultProcessingTask().execute(results.toArray(new ApiResult[results.size()]));
+            Log.i("ApiManager", "ApiTask.onPostExecute() - started running ResultProcessingTask on results");
+            Log.i("ApiManager", "ApiTask.onPostExecute() - completed " + results.size() + " tasks");
+        }
+    }
+
+    /**
+     * @author Dingenis Sieger Sinke
+     * @version 1.0
+     * @since 19-10-2015
+     * Class that processes the ApiResults internally.
+     */
+    protected class ResultProcessingTask extends AsyncTask<ApiResult, Integer, ArrayList<ApiResult>> {
+
+        @Override
+        protected ArrayList<ApiResult> doInBackground(ApiResult... params) {
+
+            /**
+             * The ApiResults that are unhandled will be stored here, for a short amount of time.
+             * */
+            ArrayList<ApiResult> unHandled = new ArrayList<>();
+
             /**
              * If we have listeners invoke them, else put the results on hold.
              * */
-            if(!onApiTaskCompleteListeners.isEmpty())
-            {
-                OnApiTaskCompleteCallback listener;
-                for(int i = 0; i < onApiTaskCompleteListeners.size(); i++) {
-                    listener = onApiTaskCompleteListeners.get(i);
-                    /**
-                     * Check if the listener is not null, if not signal the listener.
-                     * */
-                    if(listener != null)
-                    {
-                       listener.onApiTaskCompleted(results);
-                        Log.i("ApiManager", "ApiTask.onPostExecute() - invoked listener " + listener.toString());
-                    } else {
-                        mustBeRemoved.add(listener);
-                        Log.i("ApiManager", "ApiTask.onPostExecute() - removing listener, listener has a value of null");
-                    }
-                }
+            if(!listeners.isEmpty()) {
+
                 /**
-                 * Remove each  referent that is null,
-                 * outside the loop. Else the collection would be altered in the loop.
+                 * Allocate buffer to hold the current ApiResult while looping.
                  * */
-                for(int r = 0; r < mustBeRemoved.size(); r++)
-                {
-                    onApiTaskCompleteListeners.remove(mustBeRemoved.get(r));
+                ApiResult currentResult;
+
+                /**
+                 * Loop through each result.
+                 * */
+                for (int i = 0; i < params.length; i++) {
+                    currentResult = params[i];
+
+                    /**
+                     * Value indicating if the current result is handled.
+                     * */
+                    boolean handled = false;
+
+                    /**
+                     * Loop through each listener.
+                     * */
+                    for (Map.Entry<OnApiTaskCompleteCallback, ListenerEncapsulation> entry : listeners.entrySet()) {
+                        /**
+                         * Check if the listener is not null.
+                         * */
+                        if (entry.getKey() != null) {
+                            /**
+                             * Check if the ApiResult applies to this listener with the listener's filter.
+                             * */
+                            if (entry.getValue().condition.apply(currentResult)) {
+                                /**
+                                 * If so add the ApiResult.
+                                 * */
+                                entry.getValue().buffer.add(currentResult);
+                                handled = true;
+                            }
+                        }
+                    }
+                    /**
+                     * If the result is not handled add the result to the unhandled list.
+                     * */
+                    if(!handled) unHandled.add(currentResult);
                 }
-                 Log.i("ApiManager", "ApiTask.onPostExecute() - invoked " + onApiTaskCompleteListeners.size() + " listeners");
             }
-            Log.i("ApiManager", "ApiTask.onPostExecute() - completed " + results.size() + " tasks");
+            return unHandled;
+        }
+
+        @Override
+        protected void onPostExecute(ArrayList<ApiResult> apiResults) {
+            super.onPostExecute(apiResults);
+            for(Map.Entry<OnApiTaskCompleteCallback, ListenerEncapsulation> entry : listeners.entrySet())
+            {
+                if(entry.getKey() != null)
+                {
+                    entry.getValue().invokeListener(entry.getKey());
+                    Log.i("ApiManager", "ResultProcessingTask.onPostExecute() - invoked listener " + entry.getKey().toString());
+                }
+            }
         }
     }
 
@@ -222,6 +276,48 @@ public class ApiManager {
     }
 
     /**
+     * Class for encapsulating a listener.
+     * */
+    public class ListenerEncapsulation
+    {
+        /**
+         * Initialize a new instance of ListenerEncapsulation.
+         * */
+        public ListenerEncapsulation(Predicate<ApiResult> condition)
+        {
+            this.condition = condition;
+        }
+
+        /**
+         * The condition is the ApiResult must apply to, if it needs to be added to the buffer.
+         * */
+        private Predicate<ApiResult> condition;
+
+        /**
+         * Buffer to hold the ApiResults.
+         * */
+        private ArrayList<ApiResult> buffer = new ArrayList<>();
+
+        /**
+         * Method to invoke the listener within the ListenerEncapsulation.
+         * */
+        public void invokeListener(OnApiTaskCompleteCallback listener)
+        {
+
+            /**
+             * Invoke the listener.
+             * */
+            listener.onApiTaskCompleted(buffer);
+
+            /**
+             * The data has been posted, so clear the data, it no longer needed.
+             * */
+            buffer.clear();
+        }
+
+    }
+
+    /**
      * Interface enables users to execute code on the completion of ApiTask.
      * */
     public interface OnApiTaskCompleteCallback
@@ -232,5 +328,8 @@ public class ApiManager {
          * */
         void onApiTaskCompleted(ArrayList<ApiResult> results);
     }
+
+
+    public static final String TRACKER_APIMANAGER_FETCHING_COMPLETED = "TRACKER_APIMANAGER_FETCHING_COMPLETED";
 
 }

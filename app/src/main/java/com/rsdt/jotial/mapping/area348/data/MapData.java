@@ -29,9 +29,12 @@ public class MapData implements Parcelable {
      * @param in The parcel where the instance should be created from.
      *
      * TODO: The data that is coming in is never added again? But at runtime there are no errors and is the data there, why?
+     *           Because the parcelable approach is never used, we use a seriliazable hashmap.
      * */
     protected MapData(Parcel in) {
-
+        in.readTypedList(markers, MapDataPair.CREATOR_MARKER);
+        in.readTypedList(polylines, MapDataPair.CREATOR_POLYLINE);
+        in.readTypedList(circles, MapDataPair.CREATOR_CIRCLE);
     }
 
     /**

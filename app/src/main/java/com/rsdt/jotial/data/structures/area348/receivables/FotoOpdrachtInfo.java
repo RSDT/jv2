@@ -75,6 +75,7 @@ public class FotoOpdrachtInfo extends BaseInfo implements Parcelable {
 
     /**
      * Deserializes a FotoOpdrachtInfo from the JSON.
+     *
      * @param json The JSON where the FotoOpdrachtInfo should be deserialized from.
      * @return A FotoOpdrachtInfo.
      */
@@ -86,6 +87,7 @@ public class FotoOpdrachtInfo extends BaseInfo implements Parcelable {
 
     /**
      * Deserializes a array of FotoOpdrachtInfo from the JSON.
+     *
      * @param json The JSON where the array of FotoOpdrachtInfo should be deserialized from.
      * @return A array of FotoOpdrachtInfo.
      */

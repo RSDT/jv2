@@ -83,6 +83,7 @@ public class VosInfo extends BaseInfo implements Parcelable {
 
     /**
      * Deserializes a VosInfo from JSON.
+     *
      * @param json The JSON where the VosInfo should be deserialized from.
      * @return The VosInfo deserialized from the JSON.
      */
@@ -94,6 +95,7 @@ public class VosInfo extends BaseInfo implements Parcelable {
 
     /**
      * Deserializes a VosInfo array from JSON.
+     *
      * @param json The JSON where the array should be deserialized from.
      * @return The array of VosInfo deserialized from the JSON.
      */

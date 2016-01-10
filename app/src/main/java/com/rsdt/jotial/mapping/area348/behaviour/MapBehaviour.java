@@ -16,7 +16,6 @@ import com.rsdt.jotial.mapping.area348.data.MapData;
  */
 public abstract class MapBehaviour extends GraphicalMapData {
 
-
     /**
      * The event raiser for this behaviour.
      * */
@@ -40,6 +39,12 @@ public abstract class MapBehaviour extends GraphicalMapData {
         super(mapData, googleMap);
     }
 
+    /**
+     * Merges the GraphicalMapData with the a other MapData of the same type.
+     *
+     * @param other The other GraphicalMapData that should be merged with.
+     * */
+    public abstract void merge(GraphicalMapData other);
 
     /**
      * Helper method to build a title for a info.

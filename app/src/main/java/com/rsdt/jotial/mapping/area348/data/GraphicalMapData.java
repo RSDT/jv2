@@ -38,17 +38,38 @@ public class GraphicalMapData {
     /**
      * The markers of the GraphicalMapData.
      * */
-    private ArrayList<GraphicalMapDataPair<Marker, MarkerOptions>> markers = new ArrayList<>();
+    protected ArrayList<GraphicalMapDataPair<Marker, MarkerOptions>> markers = new ArrayList<>();
 
     /**
      * The polylines of the GraphicalMapData.
      * */
-    private ArrayList<GraphicalMapDataPair<Polyline, PolylineOptions>> polylines = new ArrayList<>();
+    protected ArrayList<GraphicalMapDataPair<Polyline, PolylineOptions>> polylines = new ArrayList<>();
 
     /**
      * The circles of the GraphicalMapData.
      * */
-    private ArrayList<GraphicalMapDataPair<Circle, CircleOptions>> circles = new ArrayList<>();
+    protected ArrayList<GraphicalMapDataPair<Circle, CircleOptions>> circles = new ArrayList<>();
+
+    /**
+     * Gets the markers of the GraphicalMapData.
+     * */
+    public ArrayList<GraphicalMapDataPair<Marker, MarkerOptions>> getMarkers() {
+        return markers;
+    }
+
+    /**
+     * Gets the polylines of the GraphicalMapData.
+     * */
+    public ArrayList<GraphicalMapDataPair<Polyline, PolylineOptions>> getPolylines() {
+        return polylines;
+    }
+
+    /**
+     * Gets the circles of the GraphicalMapData.
+     * */
+    public ArrayList<GraphicalMapDataPair<Circle, CircleOptions>> getCircles() {
+        return circles;
+    }
 
     /**
      * Finds a GraphicalMapDataPair on it's item id.
@@ -68,6 +89,31 @@ public class GraphicalMapData {
         }
         return null;
     }
+
+    /**
+     * Sets the visible property of all the markers, polylines and circles.
+     *
+     * @param value The value indicating the visibility. True means visible.
+     * */
+    public void setVisible(boolean value)
+    {
+        for(int i = 0; i < markers.size(); i++)
+        {
+            markers.get(i).setVisible(value);
+        }
+
+        for(int i = 0; i < polylines.size(); i++)
+        {
+            polylines.get(i).setVisible(value);
+        }
+
+        for(int i = 0; i < circles.size(); i++)
+        {
+            circles.get(i).setVisible(value);
+        }
+
+    }
+
 
     /**
      * @author Dingenis Sieger Sinke
@@ -108,6 +154,65 @@ public class GraphicalMapData {
             Log.e("GraphicalMapData", "GraphicalMapDataPair.getId() - I is not a type of Marker, Polyline or Circle.");
             return null;
         }
+
+        /**
+         * Sets the visible property of the Marker/Polyline/Circle.
+         * */
+        public void setVisible(boolean value)
+        {
+            if(first instanceof Marker)
+            {
+                ((Marker) first).setVisible(value);
+            }
+            else
+            {
+                if(first instanceof Polyline)
+                {
+                    ((Polyline) first).setVisible(value);
+                }
+                else
+                {
+                    if(first instanceof Circle)
+                    {
+                        ((Circle) first).setVisible(value);
+                    }
+                    else
+                    {
+                        Log.e("GraphicalMapData", "GraphicalMapDataPair.getId() - I is not a type of Marker, Polyline or Circle.");
+                    }
+                }
+            }
+
+        }
+
+        /**
+         * Removes the Marker/Polyline/Circle.
+         * */
+        public void remove()
+        {
+            if(first instanceof Marker)
+            {
+                ((Marker) first).remove();
+            }
+            else
+            {
+                if(first instanceof Polyline)
+                {
+                    ((Polyline) first).remove();
+                }
+                else
+                {
+                    if(first instanceof Circle)
+                    {
+                        ((Circle) first).remove();
+                    }
+                    else
+                    {
+                        Log.e("GraphicalMapData", "GraphicalMapDataPair.getId() - I is not a type of Marker, Polyline or Circle.");
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -140,6 +245,30 @@ public class GraphicalMapData {
             }
         }
         return buffer;
+    }
+
+    /**
+     * Disposes memory.
+     * */
+    public void destroy()
+    {
+        if(markers != null)
+        {
+            markers.clear();
+            markers = null;
+        }
+
+        if(polylines != null)
+        {
+            polylines.clear();
+            polylines = null;
+        }
+
+        if(circles != null)
+        {
+            circles.clear();
+            circles = null;
+        }
     }
 
     /**

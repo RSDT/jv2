@@ -38,7 +38,7 @@ public class UpdateService extends IntentService implements ApiManager.OnApiTask
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        apiManager.addListener(this);
+        apiManager.addListener(this, null);
         switch (intent.getAction())
         {
             case UPDATE_SERVICE_ACTIONS_REFRESH:

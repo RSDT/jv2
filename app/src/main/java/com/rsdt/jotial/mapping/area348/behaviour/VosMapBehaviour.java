@@ -1,5 +1,7 @@
 package com.rsdt.jotial.mapping.area348.behaviour;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.view.View;
 import android.widget.TextView;
@@ -11,6 +13,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 
+import com.rsdt.jotial.JotiApp;
 import com.rsdt.jotial.data.structures.area348.receivables.BaseInfo;
 import com.rsdt.jotial.data.structures.area348.receivables.VosInfo;
 
@@ -33,15 +36,32 @@ import java.util.Arrays;
  */
 public class VosMapBehaviour extends MapBehaviour {
 
-    public VosMapBehaviour(MapData mapData, GoogleMap googleMap)
+    /**
+     * The deelgebied of the VosMapBehaviour.
+     * */
+    private char deelgebied;
+
+    /**
+     * Gets the deelgebied of the VosMapBehaviour.
+     * */
+    public char getDeelgebied() {
+        return deelgebied;
+    }
+
+    /**
+     * Initializes a new instance of VosMapBehaviour.
+     * */
+    public VosMapBehaviour(char deelgebied, MapData mapData, GoogleMap googleMap)
     {
         super(mapData, googleMap);
 
+        this.deelgebied = deelgebied;
 
         super.eventRaiser.getEvents().add(new MapBehaviourEvent<Marker>(MapBehaviourEvent.MAP_BEHAVIOUR_EVENT_TRIGGER_INFO_WINDOW) {
             @Override
             public boolean apply(Marker marker) {
-                return (marker.getTitle().startsWith("vos"));
+                boolean value = (marker.getTitle().startsWith("vos") && marker.getTitle().charAt(4) == getDeelgebied());
+                return value;
             }
 
             @Override
@@ -63,6 +83,35 @@ public class VosMapBehaviour extends MapBehaviour {
                 ((TextView) view.findViewById(R.id.infoWindow_coordinaat)).setText(associatedInfo.latitude + " , " + associatedInfo.longitude);
             }
         });
+    }
+
+    @Override
+    public void merge(GraphicalMapData other) {
+
+        /**
+         * Clear our own marker list and add all the other's.
+         * */
+        for(int i = 0; i < markers.size(); i++)
+        {
+            markers.get(i).remove();
+        }
+        markers.clear();
+        markers.addAll(other.getMarkers());
+
+        /**
+         * Clear our own polyline list and add all the other's.
+         * */
+        for(int i = 0; i < polylines.size(); i++)
+        {
+            polylines.get(i).remove();
+        }
+        polylines.clear();
+        polylines.addAll(other.getPolylines());
+
+        /**
+         * Destroy the other, since it's no longer needed.
+         * */
+        other.destroy();
     }
 
     /**
@@ -98,7 +147,94 @@ public class VosMapBehaviour extends MapBehaviour {
             MarkerOptions mOptions = new MarkerOptions();
             mOptions.anchor(0.5f, 0.5f);
             mOptions.position(new LatLng(infos[i].latitude, infos[i].longitude));
-            mOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.dot_blauw));
+
+            BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+            bmOptions.inSampleSize = 4;
+            /**
+             * Allocate bitmap as buffer for the icon.
+             * */
+            Bitmap bitmap;
+
+            /**
+             * Checks if the info is the first, this meaning the latest.
+             * The latest info should have a special icon.
+             * */
+            if(i == 0)
+            {
+                bmOptions.inSampleSize = 2;
+                switch(infos[0].team)
+                {
+                    case "a":
+                        bitmap =BitmapFactory.decodeResource(JotiApp.getContext().getResources(),
+                                R.drawable.target_rood ,bmOptions);
+                        break;
+                    case "b":
+                        bitmap =BitmapFactory.decodeResource(JotiApp.getContext().getResources(),
+                                R.drawable.target_groen ,bmOptions);
+                        break;
+                    case "c":
+                        bitmap =BitmapFactory.decodeResource(JotiApp.getContext().getResources(),
+                                R.drawable.target_blauw ,bmOptions);
+                        break;
+                    case "d":
+                        bitmap =BitmapFactory.decodeResource(JotiApp.getContext().getResources(),
+                                R.drawable.target_turquoise ,bmOptions);
+                        break;
+                    case "e":
+                        bitmap =BitmapFactory.decodeResource(JotiApp.getContext().getResources(),
+                                R.drawable.target_paars ,bmOptions);
+                        break;
+                    case "f":
+                        bitmap =BitmapFactory.decodeResource(JotiApp.getContext().getResources(),
+                                R.drawable.target_geel ,bmOptions);
+                        break;
+                    case "x":
+                        bitmap = BitmapFactory.decodeResource(JotiApp.getContext().getResources(),
+                                R.drawable.target_zwart ,bmOptions);
+                        break;
+                    default:
+                        bitmap = null;
+                        break;
+                }
+            }
+            else
+            {
+                switch(infos[0].team)
+                {
+                    case "a":
+                        bitmap =BitmapFactory.decodeResource(JotiApp.getContext().getResources(),
+                                R.drawable.dot_rood ,bmOptions);
+                        break;
+                    case "b":
+                        bitmap =BitmapFactory.decodeResource(JotiApp.getContext().getResources(),
+                                R.drawable.dot_groen ,bmOptions);
+                        break;
+                    case "c":
+                        bitmap =BitmapFactory.decodeResource(JotiApp.getContext().getResources(),
+                                R.drawable.dot_blauw ,bmOptions);
+                        break;
+                    case "d":
+                        bitmap =BitmapFactory.decodeResource(JotiApp.getContext().getResources(),
+                                R.drawable.dot_turquoise ,bmOptions);
+                        break;
+                    case "e":
+                        bitmap =BitmapFactory.decodeResource(JotiApp.getContext().getResources(),
+                                R.drawable.dot_paars ,bmOptions);
+                        break;
+                    case "f":
+                        bitmap =BitmapFactory.decodeResource(JotiApp.getContext().getResources(),
+                                R.drawable.dot_geel ,bmOptions);
+                        break;
+                    case "x":
+                        bitmap = BitmapFactory.decodeResource(JotiApp.getContext().getResources(),
+                                R.drawable.dot_zwart ,bmOptions);
+                        break;
+                    default:
+                        bitmap = null;
+                        break;
+                }
+            }
+            mOptions.icon(BitmapDescriptorFactory.fromBitmap(bitmap));
 
             /**
              * Create a identifier for the marker, so we can find it.
@@ -110,7 +246,6 @@ public class VosMapBehaviour extends MapBehaviour {
              * Add a point to the points of the vos line.
              * */
             pOptions.add(new LatLng(infos[i].latitude, infos[i].longitude));
-
 
             buffer.getMarkers().add(new MapDataPair<>(mOptions, new ArrayList<BaseInfo>(Arrays.asList(infos[i]))));
         }
@@ -128,7 +263,7 @@ public class VosMapBehaviour extends MapBehaviour {
     /**
      * Defines the with of the vos polyline.
      * */
-    public static final int VOS_POLYLINE_WIDTH = 2;
+    public static final int VOS_POLYLINE_WIDTH = 10;
 
     /**
      * Defines the stroke width of the vos circle.

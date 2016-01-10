@@ -79,6 +79,7 @@ public class ScoutingGroepInfo extends BaseInfo implements Parcelable, ClusterIt
 
     /**
      * Deserializes a ScoutingGroepInfo from JSON.
+     *
      * @param json The JSON where the ScoutingGroepInfo should be deserialized from.
      * @return The deserialized ScoutingGroepInfo.
      */
@@ -90,6 +91,7 @@ public class ScoutingGroepInfo extends BaseInfo implements Parcelable, ClusterIt
 
     /**
      * Deserializes a array of ScoutingGroepInfo from JSON.
+     *
      * @param json The JSON where the array of ScoutingGroepInfo should be deserialized from.
      * @return The deserialized array of ScoutingGroepInfo.
      */

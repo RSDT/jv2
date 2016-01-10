@@ -10,6 +10,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.rsdt.jotial.data.structures.area348.receivables.BaseInfo;
 import com.rsdt.jotial.data.structures.area348.receivables.FotoOpdrachtInfo;
 import com.rsdt.jotial.mapping.area348.behaviour.events.MapBehaviourEvent;
+import com.rsdt.jotial.mapping.area348.data.GraphicalMapData;
 import com.rsdt.jotial.mapping.area348.data.MapData;
 import com.rsdt.jotial.mapping.area348.data.MapDataPair;
 import com.rsdt.jotiv2.R;
@@ -58,6 +59,25 @@ public class FotoOpdrachtMapBehaviour extends MapBehaviour {
                 ((TextView)view.findViewById(R.id.infoWindow_coordinaat)).setText(associatedInfo.latitude + " , " + associatedInfo.longitude);
             }
         });
+    }
+
+    @Override
+    public void merge(GraphicalMapData other) {
+
+        /**
+         * Clear our own marker list and add all the other's.
+         * */
+        for(int i = 0; i < markers.size(); i++)
+        {
+            markers.get(i).remove();
+        }
+        markers.clear();
+        markers.addAll(other.getMarkers());
+
+        /**
+         * Destroy the other, since it's no longer needed.
+         * */
+        other.destroy();
     }
 
 

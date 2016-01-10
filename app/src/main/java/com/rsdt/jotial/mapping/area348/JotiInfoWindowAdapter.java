@@ -2,7 +2,6 @@ package com.rsdt.jotial.mapping.area348;
 
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.TextView;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.Marker;
@@ -16,12 +15,18 @@ import com.rsdt.jotiv2.R;
  */
 public class JotiInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
 
+    /**
+     * Initializes a new instance of JotiInfoWindowAdapter.
+     * */
     public JotiInfoWindowAdapter(LayoutInflater layoutInflater, OnGetInfoWindowCallback onGetInfoWindowCallback)
     {
         this.layoutInflater = layoutInflater;
         this.onGetInfoWindowCallback = onGetInfoWindowCallback;
     }
 
+    /**
+     * The LayoutInflater used for inflating the InfoWindow.
+     * */
     private final LayoutInflater layoutInflater;
 
     /**
@@ -39,14 +44,6 @@ public class JotiInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
         View view = layoutInflater.inflate(R.layout.info_window, null);
 
         /**
-         * Get the textviews.
-         * */
-        TextView infoType = (TextView) view.findViewById(R.id.infoWindow_infoType);
-        TextView naam = (TextView) view.findViewById(R.id.infoWindow_naam);
-        TextView dateTime_adres = (TextView) view.findViewById(R.id.infoWindow_dateTime_adres);
-        TextView coordinaat = (TextView) view.findViewById(R.id.infoWindow_coordinaat);
-
-        /**
          * Invoke the listener.
          * */
         onGetInfoWindowCallback.onGetInfoWindow(view, marker);
@@ -62,10 +59,13 @@ public class JotiInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
      * @author Dingenis Sieger Sinke
      * @version 1.0
      * @since 28-10-2015
-     * Interface for creating a listener, on get info window.
+     * Interface for creating a listener, on get info window event.
      */
     public interface OnGetInfoWindowCallback
     {
+        /**
+         * Invoked when the info window is created.
+         * */
         void onGetInfoWindow(View view, Marker marker);
     }
 

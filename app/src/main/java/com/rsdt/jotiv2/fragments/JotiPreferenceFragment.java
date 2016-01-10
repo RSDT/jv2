@@ -18,4 +18,9 @@ public class JotiPreferenceFragment extends PreferenceFragment {
         super.onCreate(savedInstanceState);
         addPreferencesFromResource(R.xml.preferences);
     }
+
+    public static JotiPreferenceFragment newInstance() { return new JotiPreferenceFragment(); }
+
+    public static final String TAG = "JOTI_PREFERENCE_FRAGMENT";
+
 }
