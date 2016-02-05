@@ -5,15 +5,27 @@ import android.view.View;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.Marker;
+
 import com.rsdt.jotiv2.R;
+
+import java.util.ArrayList;
 
 /**
  * @author Dingenis Sieger Sinke
  * @version 1.0
  * @since 28-10-2015
- * The InfoWindowAdapter for the joti app.
+ * The InfoWindowAdapter for the JotiApp.
  */
 public class JotiInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
+
+
+    /**
+     * Initializes a new instance of JotiInfoWindowAdapter.
+     * */
+    public JotiInfoWindowAdapter(LayoutInflater layoutInflater)
+    {
+        this.layoutInflater = layoutInflater;
+    }
 
     /**
      * Initializes a new instance of JotiInfoWindowAdapter.
@@ -21,19 +33,18 @@ public class JotiInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
     public JotiInfoWindowAdapter(LayoutInflater layoutInflater, OnGetInfoWindowCallback onGetInfoWindowCallback)
     {
         this.layoutInflater = layoutInflater;
-        this.onGetInfoWindowCallback = onGetInfoWindowCallback;
+        listeners.add(onGetInfoWindowCallback);
     }
 
     /**
      * The LayoutInflater used for inflating the InfoWindow.
      * */
-    private final LayoutInflater layoutInflater;
+    private LayoutInflater layoutInflater;
 
     /**
-     * The listener.
-     * TODO: Make a list of listeners?
+     * The list of listeners.
      * */
-    private final OnGetInfoWindowCallback onGetInfoWindowCallback;
+    private ArrayList<OnGetInfoWindowCallback> listeners = new ArrayList<>();
 
     @Override
     public View getInfoWindow(Marker marker) {
@@ -44,9 +55,29 @@ public class JotiInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
         View view = layoutInflater.inflate(R.layout.info_window, null);
 
         /**
-         * Invoke the listener.
+         * Allocate callback outside loop.
          * */
-        onGetInfoWindowCallback.onGetInfoWindow(view, marker);
+        OnGetInfoWindowCallback callback;
+
+        /**
+         * Loop through each listener.
+         * */
+        for(int i = 0; i < listeners.size(); i++)
+        {
+            /**
+             * Set the callback buffer.
+             * */
+            callback = listeners.get(i);
+
+            /**
+             * Check if the callback is not null, if so invoke the callback.
+             * */
+            if(callback != null) callback.onGetInfoWindow(view, marker);
+        }
+
+        /**
+         * Return the view.
+         * */
         return view;
     }
 

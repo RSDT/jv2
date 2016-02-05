@@ -5,7 +5,9 @@ package com.rsdt.jotial.data.structures.area348.sendables;
  * @version 1.0
  * @since 4-1-2016
  * Represents the VosInfo that can be send.
+ * Deprecated: use JObject instead.
  */
+@Deprecated
 public class VosInfoSendable {
 
     /**

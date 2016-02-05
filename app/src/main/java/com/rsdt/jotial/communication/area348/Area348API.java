@@ -9,4 +9,6 @@ package com.rsdt.jotial.communication.area348;
 public final class Area348API {
 
     public static final String root = "http://jotihunt-api.area348.nl";
+
+    public static final String rootV2 = "http://jotihunt-api_v2.area348.nl";
 }

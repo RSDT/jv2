@@ -2,6 +2,8 @@ package com.rsdt.jotial.communication;
 
 import android.support.annotation.Nullable;
 
+import com.rsdt.jotial.JotiApp;
+
 import java.net.URL;
 
 /**

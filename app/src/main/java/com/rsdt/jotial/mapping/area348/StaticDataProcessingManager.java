@@ -12,9 +12,9 @@ import java.util.HashMap;
  * @author Dingenis Sieger Sinke
  * @version 1.0
  * @since 21-11-2015
- * Defines the static behaviour for the DataManager class.
+ * Defines the static behaviour for the DataProcessingManager class.
  */
-public class StaticDataManager extends DataManager {
+public class StaticDataProcessingManager extends DataProcessingManager {
 
     /**
      * The wait list, that holds the MapPartStates if there are no listeners.
@@ -32,27 +32,25 @@ public class StaticDataManager extends DataManager {
         {
             listener.onDataTaskCompleted(waitList);
             waitList.clear();
-            Log.i("DataManager", "addListener() - invoked the new listener with the queued data");
+            Log.i("DataProcessingManager", "addListener() - invoked the new listener with the queued data");
         }
     }
 
     @Override
     public void onApiTaskCompleted(ArrayList<ApiResult> results) {
-        StaticDataTask dataTask = new StaticDataTask();
+        StaticDataProcessingTask dataTask = new StaticDataProcessingTask();
         dataTask.execute(results.toArray(new ApiResult[results.size()]));
         tasks.add(dataTask);
-        Log.i("DataManager", " onApiTaskCompleted() - executing " + results.size() + " data tasks");
     }
 
     /**
      * @author Dingenis Sieger Sinke
      * @version 1.0
      * @since 21-11-2015
-     * Defines the static behaviour for the DataTask.
+     * Defines the static behaviour for the DataProcessingTask.
      * */
-    protected class StaticDataTask extends DataTask
+    protected class StaticDataProcessingTask extends DataProcessingTask
     {
-
         @Override
         protected void onPostExecute(HashMap<String, MapData> hashMap) {
             super.onPostExecute(hashMap);
@@ -63,18 +61,14 @@ public class StaticDataManager extends DataManager {
             if(onDataTaskCompletedListeners.isEmpty())
             {
                 waitList.putAll(hashMap);
-                Log.i("DataManager", "DataTask.onPostExecute() - 0 listeners, putting results on the waitList");
+                Log.i("DataProcessingManager", "DataProcessingTask.onPostExecute() - 0 listeners, putting results on the waitList");
             }
         }
     }
 
-
-
-
-
-
-
-
-
-
+    @Override
+    public void trim() {
+        super.trim();
+        waitList.clear();
+    }
 }

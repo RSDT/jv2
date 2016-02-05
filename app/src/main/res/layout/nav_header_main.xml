@@ -9,15 +9,14 @@
     android:theme="@style/ThemeOverlay.AppCompat.Dark" android:orientation="vertical"
     android:gravity="bottom">
 
-    <ImageView android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:paddingTop="@dimen/nav_header_vertical_spacing"
-        android:src="@drawable/hunter" android:id="@+id/imageView" />
+    <ImageView android:id="@+id/nav_avatar" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:paddingTop="@dimen/nav_header_vertical_spacing" />
 
-    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:paddingTop="@dimen/nav_header_vertical_spacing" android:text="Dingenis Sieger Sinke"
+    <TextView android:id = "@+id/nav_name" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:paddingTop="@dimen/nav_header_vertical_spacing" android:text="Guest"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
 
-    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:text="Moderator" android:id="@+id/textView" />
+    <TextView android:id = "@+id/nav_rank" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="Guest" />
 
 </LinearLayout>

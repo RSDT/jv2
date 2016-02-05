@@ -34,7 +34,7 @@ public class ScoutingGroepInfoRenderer extends DefaultClusterRenderer<ScoutingGr
         /**
          * Use the title to save data with the marker.
          * */
-        markerOptions.title("sc;" + item.naam + ";" + item.adres + ";" + item.latitude + ";" + item.longitude + ";" + item.deelgebied);
+        markerOptions.title("sc " + item.naam + " " + item.adres + " " + item.latitude + " " + item.longitude + " " + item.team);
     }
 
     @Override

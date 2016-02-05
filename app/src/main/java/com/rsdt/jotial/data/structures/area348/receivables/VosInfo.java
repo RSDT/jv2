@@ -25,7 +25,9 @@ public class VosInfo extends BaseInfo implements Parcelable {
         team = in.readString();
         team_naam = in.readString();
         opmerking = in.readString();
-        gebruiker = in.readString();
+        extra = in.readString();
+        //hint_nr = in.readInt();
+        icon = in.readInt();
     }
 
     /**
@@ -51,7 +53,17 @@ public class VosInfo extends BaseInfo implements Parcelable {
     /**
      * The user of the VosInfo.
      */
-    public String gebruiker;
+    public String extra;
+
+    /**
+     * The hint number of the VosInfo.
+     */
+    public String hint_nr;
+
+    /**
+     * The icon of the VosInfo.
+     * */
+    public int icon;
 
 
     @Override
@@ -61,7 +73,9 @@ public class VosInfo extends BaseInfo implements Parcelable {
         dest.writeString(team);
         dest.writeString(team_naam);
         dest.writeString(opmerking);
-        dest.writeString(gebruiker);
+        dest.writeString(extra);
+        //dest.writeInt(hint_nr);
+        dest.writeInt(icon);
     }
 
     @Override

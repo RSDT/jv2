@@ -1,140 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent">
-    <PreferenceCategory
-        android:title="@string/pref_loc_cat"
-        android:key="pref_loc_cat">
-        <CheckBoxPreference
-            android:key="pref_send_loc"
-            android:title="@string/send_loction_title"
-            android:summary="@string/send_location_summ"
-            android:defaultValue="false" />
-        <EditTextPreference
-            android:key="pref_send_loc_interval"
-            android:title="@string/pref_location_interval_title"
-            android:summary="@string/pref_location_interval_summ"
-            android:inputType="number"
-            android:defaultValue="1"
-            />
-        <EditTextPreference
-            android:key="pref_username"
-            android:title="username"
-            android:summary="unknown"
-            android:defaultValue="@string/standard_username"
-            />
-    </PreferenceCategory>
-    <PreferenceCategory
-        android:title="@string/pref_map_cat"
-        android:key="pref_map_cat">
-        <EditTextPreference
-            android:key="pref_zoom"
-            android:title="@string/pref_zoom_title"
-            android:summary="@string/pref_zoom_summ"
-            android:inputType="numberDecimal"
-            android:defaultValue="18.0"
-            />
-        <CheckBoxPreference
-            android:key="pref_follow"
-            android:title="@string/send_follow_title"
-            android:summary="@string/send_follow_summ"
-            android:defaultValue="true" />
 
-        <EditTextPreference
-            android:key="pref_speed"
-            android:title="@string/pref_speed_title"
-            android:summary="@string/pref_speed_summ"
-            android:inputType="numberDecimal"
-            android:defaultValue="6.0"
-            />
-        <EditTextPreference
-            android:key="pref_update"
-            android:title="@string/pref_update_title"
-            android:summary="@string/pref_update_summ"
-            android:inputType="number"
-            android:defaultValue="1"
-            />
-        <CheckBoxPreference
-            android:key="pref_thema"
-            android:title="@string/pref_thema_title"
-            android:summary="@string/pref_thema_summ"
-            android:defaultValue="false"
-            />
+
+    <PreferenceCategory android:title="@string/pref_cat_account">
+
+        <EditTextPreference android:title="@string/pref_account_username_title" android:key="pref_account_username"
+            android:summary="@string/pref_account_username_sum"/>
+
+        <EditTextPreference android:title="@string/pref_account_rank_title" android:key="pref_account_rank"
+            android:editable="false" android:summary="@string/pref_account_rank_sum" android:defaultValue="@string/pref_account_rank_def"/>
+
+        <ListPreference android:title="@string/pref_account_icon_title" android:key="pref_account_icon"
+            android:summary="@string/pref_account_icon_sum" android:defaultValue="@string/pref_account_icon_def"
+            android:entries="@array/pref_account_icon" android:entryValues="@array/pref_account_iconData"/>
+
+        <EditTextPreference android:title="@string/pref_account_key_title" android:key="pref_account_key"
+            android:editable="false" android:summary="@string/pref_account_key_sum"/>
+
     </PreferenceCategory>
-    <PreferenceCategory
-        android:title="@string/pref_deelgebieden"
-        android:key="pref_delgebieden">
-        <CheckBoxPreference
-            android:key="pref_deelgebieden_overlay"
-            android:title="@string/pref_deelgebieden_overlay_title"
-            android:summary="@string/pref_deelgebieden_overlay"
-            android:defaultValue="true" />
-        <CheckBoxPreference
-            android:key="pref_vos_a"
-            android:title="@string/alpha"
-            android:summary="@string/alpha_sum"
-            android:defaultValue="true" />
-        <CheckBoxPreference
-            android:key="pref_vos_b"
-            android:title="@string/bravo"
-            android:summary="@string/bravo_sum"
-            android:defaultValue="true" />
-        <CheckBoxPreference
-            android:key="pref_vos_c"
-            android:title="@string/charlie"
-            android:summary="@string/charlie_sum"
-            android:defaultValue="true" />
-        <CheckBoxPreference
-            android:key="pref_vos_d"
-            android:title="@string/delta"
-            android:summary="@string/delta_sum"
-            android:defaultValue="true" />
-        <CheckBoxPreference
-            android:key="pref_vos_e"
-            android:title="@string/echo"
-            android:summary="@string/echo_sum"
-            android:defaultValue="true" />
-        <CheckBoxPreference
-            android:key="pref_vos_f"
-            android:title="@string/foxtrot"
-            android:summary="@string/foxtrot_sum"
-            android:defaultValue="true" />
-        <CheckBoxPreference
-            android:key="pref_vos_x"
-            android:title="@string/xray"
-            android:summary="@string/xray_sum"
-            android:defaultValue="true" />
-        <CheckBoxPreference
-            android:key="pref_hunter"
-            android:title="@string/tail"
-            android:summary="@string/tail_sum"
-            android:defaultValue="true" />
-        <CheckBoxPreference
-            android:key="pref_sc"
-            android:title="@string/sc"
-            android:summary="@string/sc_sum"
-            android:defaultValue="true" />
-        <CheckBoxPreference
-            android:key="pref_foto"
-            android:title="@string/foto"
-            android:summary="@string/foto_sum"
-            android:defaultValue="true" />
+
+
+    <PreferenceCategory android:title="@string/pref_cat_map">
+
+        <EditTextPreference android:title="@string/pref_map_hunt_name_title" android:key="pref_map_hunt_name"
+            android:summary="@string/pref_map_hunt_name_sum"/>
+
     </PreferenceCategory>
-    <PreferenceCategory
-        android:title="debug"
-        android:key="pref_debug_cat">
-        <CheckBoxPreference
-            android:key="pref_debug"
-            android:title="@string/send_debug_title"
-            android:summary="@string/send_debug_summ"
-            android:defaultValue="false" />
-        <CheckBoxPreference
-            android:key="pref_toast"
-            android:title="@string/send_toast_title"
-            android:summary="@string/send_toast_summ"
-            android:defaultValue="true" />
+
+    <PreferenceCategory android:title="@string/pref_cat_sync">
+
+        <CheckBoxPreference android:title="@string/pref_sync_smart_title" android:key="pref_sync_smart"
+            android:summary="@string/pref_sync_smart_sum"/>
+
     </PreferenceCategory>
-    <Preference
-        android:title="version"
-        android:summary="@string/version"
-        android:key="pref_version"/>
+
+
 </PreferenceScreen>

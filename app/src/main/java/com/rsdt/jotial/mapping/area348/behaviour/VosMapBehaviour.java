@@ -60,8 +60,7 @@ public class VosMapBehaviour extends MapBehaviour {
         super.eventRaiser.getEvents().add(new MapBehaviourEvent<Marker>(MapBehaviourEvent.MAP_BEHAVIOUR_EVENT_TRIGGER_INFO_WINDOW) {
             @Override
             public boolean apply(Marker marker) {
-                boolean value = (marker.getTitle().startsWith("vos") && marker.getTitle().charAt(4) == getDeelgebied());
-                return value;
+                return (marker.getTitle().startsWith("vos") && marker.getTitle().charAt(4) == getDeelgebied());
             }
 
             @Override

@@ -107,7 +107,7 @@ public class ScoutingGroepMapBehaviour extends MapBehaviour {
              * */
             MarkerOptions mOptions = new MarkerOptions();
             mOptions.position(new LatLng(groepen[i].latitude, groepen[i].longitude));
-            mOptions.title(buildInfoTitle(new String[]{"sc", groepen[i].deelgebied }, " "));
+            mOptions.title(buildInfoTitle(new String[]{"sc", groepen[i].team}, " "));
             mOptions.anchor(0.5f, 0.5f);
 
             /**

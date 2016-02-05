@@ -73,6 +73,7 @@ public class MapData implements Parcelable {
         return circles;
     }
 
+
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeTypedList(markers);

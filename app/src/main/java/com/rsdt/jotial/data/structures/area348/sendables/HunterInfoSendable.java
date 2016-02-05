@@ -5,7 +5,9 @@ package com.rsdt.jotial.data.structures.area348.sendables;
  * @version 1.0
  * @since 20-10-2015
  * Class that servers as a serialization object for sending the HunterInfo.
+ * Deprecated: use JObject instead.
  */
+@Deprecated
 public class HunterInfoSendable {
 
     /**

@@ -31,16 +31,14 @@ public class MapDataPair<T extends Parcelable> extends Pair<T, ArrayList<BaseInf
         super(first, second);
     }
 
-
     /**
      * Creates a new MapDataPair from the Parcel.
      *
      * @param in The Parcel where the MapDataPair should be created from.
      * */
-    protected MapDataPair(Parcel in) {
-        super((T) in.readParcelable(getAssociatedClassloader(in.readString())), in.createTypedArrayList(BaseInfo.CREATOR));
+    protected MapDataPair(Parcel in, ClassLoader loader) {
+        super((T) in.readParcelable(loader), in.createTypedArrayList(BaseInfo.CREATOR));
     }
-
 
     /**
      * Gets the associated ClassLoader of the generic object.
@@ -61,7 +59,6 @@ public class MapDataPair<T extends Parcelable> extends Pair<T, ArrayList<BaseInf
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(first.getClass().toString());
         dest.writeParcelable(first, flags);
         dest.writeTypedList(second);
     }
@@ -74,7 +71,7 @@ public class MapDataPair<T extends Parcelable> extends Pair<T, ArrayList<BaseInf
     public static final Creator<MapDataPair<MarkerOptions>> CREATOR_MARKER = new Creator<MapDataPair<MarkerOptions>>() {
         @Override
         public MapDataPair<MarkerOptions> createFromParcel(Parcel in) {
-            return new MapDataPair<>(in);
+            return new MapDataPair<>(in, MarkerOptions.class.getClassLoader());
         }
 
         @Override
@@ -84,7 +81,7 @@ public class MapDataPair<T extends Parcelable> extends Pair<T, ArrayList<BaseInf
     public static final Creator<MapDataPair<PolylineOptions>> CREATOR_POLYLINE = new Creator<MapDataPair<PolylineOptions>>() {
         @Override
         public MapDataPair<PolylineOptions> createFromParcel(Parcel in) {
-            return new MapDataPair<>(in);
+            return new MapDataPair<>(in, PolylineOptions.class.getClassLoader());
         }
 
         @Override
@@ -96,7 +93,7 @@ public class MapDataPair<T extends Parcelable> extends Pair<T, ArrayList<BaseInf
     public static final Creator<MapDataPair<CircleOptions>> CREATOR_CIRCLE = new Creator<MapDataPair<CircleOptions>>() {
         @Override
         public MapDataPair<CircleOptions> createFromParcel(Parcel in) {
-            return new MapDataPair<>(in);
+            return new MapDataPair<>(in, CircleOptions.class.getClassLoader());
         }
 
         @Override

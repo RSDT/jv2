@@ -61,4 +61,78 @@
     <string name="pref_deelgebieden_overlay">laat deelgebieden zien.</string>
     <string name="pref_thema_title">Thema</string>
     <string name="pref_thema_summ">Iconen in thema</string>
+
+    <!-- START CAT ACCOUNT-->
+
+    <!--
+    The Account category of the preferences.
+    -->
+    <string name="pref_cat_account">Account</string>
+
+    <!--
+    The username section.
+    -->
+    <string name="pref_account_username_title">Naam</string>
+    <string name="pref_account_username_sum">Je gebruikersnaam van je account</string>
+
+
+    <!--
+    The rank section.
+    -->
+    <string name="pref_account_rank_title">Rank</string>
+    <string name="pref_account_rank_sum">De rank van je account</string>
+    <string name="pref_account_rank_def">Guest</string>
+
+    <!--
+    The icon section.
+    -->
+    <string name="pref_account_icon_title">Icoon</string>
+    <string name="pref_account_icon_sum">Het icoon voor jou op de kaart</string>
+    <string name="pref_account_icon_def">0</string>
+    <string-array name="pref_account_icon">
+        <item>Default</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+    </string-array>
+    <string-array name="pref_account_iconData">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+    </string-array>
+
+    <!--
+    The API-Key section.
+    -->
+    <string name="pref_account_key_title">API-Key</string>
+    <string name="pref_account_key_sum">De API Key voor je account</string>
+    <!-- END CAT -->
+
+    <!-- START CAT MAP -->
+
+    <!--
+    The Map category of the preferences.
+    -->
+    <string name="pref_cat_map">Kaart</string>
+
+    <!--
+    The hunt name section.
+    -->
+    <string name="pref_map_hunt_name_title">Huntnaam</string>
+    <string name="pref_map_hunt_name_sum">Je naam zichtbaar op de map</string>
+    <!-- END CAT -->
+
+    <!-- START CAT FETCH -->
+
+    <string name="pref_cat_sync">Synchroniseren</string>
+
+    <string name="pref_sync_smart_title">Smart Sync</string>
+    <string name="pref_sync_smart_sum">Slimme manier om de gegevens te synchroniseren</string>
+
+    <!-- END CAT -->
+
+
 </resources>

@@ -93,13 +93,26 @@ public class ApiManager {
      * */
     public void preform()
     {
-        pending.addAll(queued);
-        queued.clear();
+        if(!queued.isEmpty())
+        {
+            pending.addAll(queued);
+            queued.clear();
 
-        ApiTask task = new ApiTask();
-        task.execute(pending.toArray(new ApiRequest[pending.size()]));
-        tasks.add(task);
-        Log.i("ApiManager", "preform() - preforming  " + pending.size() + " ApiRequests");
+            ApiTask task = new ApiTask();
+            task.execute(pending.toArray(new ApiRequest[pending.size()]));
+            tasks.add(task);
+            Log.i("ApiManager", "preform() - preforming  " + pending.size() + " ApiRequests");
+        }
+    }
+
+    /**
+     * Processes the results, and invokes the appropriate listeners.
+     * */
+    public void process(ArrayList<ApiResult> results)
+    {
+        new ResultProcessingTask().execute(results.toArray(new ApiResult[results.size()]));
+        Log.i("ApiManager", "ApiTask.onPostExecute() - started running ResultProcessingTask on results");
+        Log.i("ApiManager", "ApiTask.onPostExecute() - completed " + results.size() + " tasks");
     }
 
     /**
@@ -110,6 +123,7 @@ public class ApiManager {
      * TODO: Make response code check.
      */
     protected class ApiTask extends AsyncTask<ApiRequest, Integer, ArrayList<ApiResult>> {
+
 
         @Override
         protected ArrayList<ApiResult> doInBackground(ApiRequest... params) {
@@ -130,35 +144,71 @@ public class ApiManager {
                          * */
                         if(currentRequest.getData() != null)
                         {
+                            connection.setDoOutput(true);
+                            connection.setRequestMethod("POST");
+
                             OutputStreamWriter streamWriter = new OutputStreamWriter(connection.getOutputStream());
                             streamWriter.write(currentRequest.getData());
                             streamWriter.flush();
                             streamWriter.close();
                         }
 
-                        /**
-                         * Get the response stream and read it.
-                         * */
-                        InputStream response = connection.getInputStream();
-                        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(response));
-                        StringBuilder builder = new StringBuilder();
-                        String line;
-                        while ((line = bufferedReader.readLine()) != null) {
-                            builder.append(line);
-                            builder.append("/r");
+                        if(connection.getResponseCode() == 200)
+                        {
+                            /**
+                             * Get the response stream and read it.
+                             * */
+                            InputStream response = connection.getInputStream();
+                            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(response));
+                            StringBuilder builder = new StringBuilder();
+                            String line;
+                            while ((line = bufferedReader.readLine()) != null) {
+                                builder.append(line);
+                            }
+                            bufferedReader.close();
+
+                            /**
+                             * Create and add a ApiResult with the new data.
+                             * */
+                            results.add(new ApiResult(currentRequest, builder.toString(), connection.getResponseCode()));
                         }
-                        bufferedReader.close();
-                        response.close();
+                        else
+                        {
+                            InputStream errorResponse = connection.getErrorStream();
+                            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(errorResponse));
+                            StringBuilder builder = new StringBuilder();
+                            String line;
+                            while ((line = bufferedReader.readLine()) != null) {
+                                builder.append(line);
+                            }
+                            bufferedReader.close();
+                            results.add(new ApiResult(currentRequest, builder.toString(), connection.getResponseCode()));
+
+                            /**
+                             * Write the error to the log.
+                             * */
+                            Log.e("ApiManager", builder.toString());
+                        }
 
                         /**
-                         * Create and add a ApiResult with the new data.
+                         * Disconnect.
                          * */
-                        results.add(new ApiResult(currentRequest, builder.toString()));
+                        connection.disconnect();
+
+                        /**
+                         * Check if we use a delay, if so delay by the set amount.
+                         * */
+                        if(APITASK_USE_DELAY)
+                        {
+                            Thread.sleep(APITASK_DELAY);
+                        }
+
                     }
                     catch(Exception e)
                     {
                         Log.e("ApiManager", e.getMessage(), e);
                     }
+
             }
             return results;
         }
@@ -180,9 +230,7 @@ public class ApiManager {
              * */
             JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_APIMANAGER_FETCHING_COMPLETED, "ApiManager", "Fetching completed."));
 
-            new ResultProcessingTask().execute(results.toArray(new ApiResult[results.size()]));
-            Log.i("ApiManager", "ApiTask.onPostExecute() - started running ResultProcessingTask on results");
-            Log.i("ApiManager", "ApiTask.onPostExecute() - completed " + results.size() + " tasks");
+            process(results);
         }
     }
 
@@ -231,22 +279,35 @@ public class ApiManager {
                          * Check if the listener is not null.
                          * */
                         if (entry.getKey() != null) {
-                            /**
-                             * Check if the ApiResult applies to this listener with the listener's filter.
-                             * */
-                            if (entry.getValue().condition.apply(currentResult)) {
+
+                            if(entry.getValue().condition != null)
+                            {
+                                /**
+                                 * Check if the ApiResult applies to this listener with the listener's filter.
+                                 * */
+                                if (entry.getValue().condition.apply(currentResult)) {
+                                    /**
+                                     * If so add the ApiResult.
+                                     * */
+                                    entry.getValue().buffer.add(currentResult);
+                                    handled = true;
+                                }
+                            }
+                            else
+                            {
                                 /**
                                  * If so add the ApiResult.
                                  * */
                                 entry.getValue().buffer.add(currentResult);
                                 handled = true;
                             }
+
                         }
                     }
                     /**
                      * If the result is not handled add the result to the unhandled list.
                      * */
-                    if(!handled) unHandled.add(currentResult);
+                    if (!handled) unHandled.add(currentResult);
                 }
             }
             return unHandled;
@@ -303,16 +364,18 @@ public class ApiManager {
          * */
         public void invokeListener(OnApiTaskCompleteCallback listener)
         {
+            if(!buffer.isEmpty())
+            {
+                /**
+                 * Invoke the listener.
+                 * */
+                listener.onApiTaskCompleted(buffer);
 
-            /**
-             * Invoke the listener.
-             * */
-            listener.onApiTaskCompleted(buffer);
-
-            /**
-             * The data has been posted, so clear the data, it no longer needed.
-             * */
-            buffer.clear();
+                /**
+                 * The data has been posted, so clear the data, it no longer needed.
+                 * */
+                buffer.clear();
+            }
         }
 
     }
@@ -329,6 +392,18 @@ public class ApiManager {
         void onApiTaskCompleted(ArrayList<ApiResult> results);
     }
 
+
+    /**
+     * The delay for the ApiTask, a delay is needed because if we execute the requests rapidly after each other,
+     * the API will get overloaded. So we use a delay. A delay of 800ms is recommend, lower than this will
+     * possibly result in API overload.
+     * */
+    public static int APITASK_DELAY = 800;
+
+    /**
+     * Value indicating if a delay should be used for the ApiTask, default true.
+     * */
+    public static final boolean APITASK_USE_DELAY = true;
 
     public static final String TRACKER_APIMANAGER_FETCHING_COMPLETED = "TRACKER_APIMANAGER_FETCHING_COMPLETED";
 

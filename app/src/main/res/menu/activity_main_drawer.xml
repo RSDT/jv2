@@ -11,7 +11,7 @@
     <item android:title="Tools">
         <menu>
             <item android:id="@+id/nav_spot" android:icon="@drawable/ic_action_location_found"
-                android:title="Spot" />
+                android:title="Spot" android:checkable="true" />
         </menu>
     </item>
 

@@ -21,6 +21,4 @@ public class JotiPreferenceFragment extends PreferenceFragment {
 
     public static JotiPreferenceFragment newInstance() { return new JotiPreferenceFragment(); }
 
-    public static final String TAG = "JOTI_PREFERENCE_FRAGMENT";
-
 }

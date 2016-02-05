@@ -46,6 +46,7 @@ public abstract class MapBehaviour extends GraphicalMapData {
      * */
     public abstract void merge(GraphicalMapData other);
 
+
     /**
      * Helper method to build a title for a info.
      * */

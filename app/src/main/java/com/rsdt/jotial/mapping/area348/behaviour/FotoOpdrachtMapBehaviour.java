@@ -44,19 +44,19 @@ public class FotoOpdrachtMapBehaviour extends MapBehaviour {
             @Override
             public void onConditionMet(Object[] args) {
 
-                View view = (View)args[0];
+                View view = (View) args[0];
 
-                GraphicalMapDataPair<Marker, MarkerOptions> pair = findPair(((Marker)args[1]).getId());
+                GraphicalMapDataPair<Marker, MarkerOptions> pair = findPair(((Marker) args[1]).getId());
 
-                FotoOpdrachtInfo associatedInfo = (FotoOpdrachtInfo)pair.second.second.get(0);
+                FotoOpdrachtInfo associatedInfo = (FotoOpdrachtInfo) pair.second.second.get(0);
 
-                ((TextView)view.findViewById(R.id.infoWindow_infoType)).setText("FotoOpdrachtInfo");
+                ((TextView) view.findViewById(R.id.infoWindow_infoType)).setText("FotoOpdrachtInfo");
 
-                ((TextView)view.findViewById(R.id.infoWindow_naam)).setText(associatedInfo.naam);
+                ((TextView) view.findViewById(R.id.infoWindow_naam)).setText(associatedInfo.naam);
 
-                ((TextView)view.findViewById(R.id.infoWindow_dateTime_adres)).setText(associatedInfo.info);
+                ((TextView) view.findViewById(R.id.infoWindow_dateTime_adres)).setText(associatedInfo.info);
 
-                ((TextView)view.findViewById(R.id.infoWindow_coordinaat)).setText(associatedInfo.latitude + " , " + associatedInfo.longitude);
+                ((TextView) view.findViewById(R.id.infoWindow_coordinaat)).setText(associatedInfo.latitude + " , " + associatedInfo.longitude);
             }
         });
     }
@@ -105,11 +105,10 @@ public class FotoOpdrachtMapBehaviour extends MapBehaviour {
             MarkerOptions mOptions = new MarkerOptions();
             mOptions.anchor(0.5f, 0.5f);
             mOptions.position(new LatLng(fotoOpdrachten[i].latitude, fotoOpdrachten[i].longitude));
-            mOptions.title(buildInfoTitle(new String[]{ "foto" }," "));
+            mOptions.title(buildInfoTitle(new String[]{ "foto" }, " "));
             buffer.getMarkers().add(new MapDataPair<>(mOptions, new ArrayList<BaseInfo>(Arrays.asList(fotoOpdrachten[i]))));
         }
         return buffer;
     }
-
 
 }

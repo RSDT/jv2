@@ -26,7 +26,7 @@ public class ScoutingGroepInfo extends BaseInfo implements Parcelable, ClusterIt
         super(in);
         naam = in.readString();
         adres = in.readString();
-        deelgebied = in.readString();
+        team = in.readString();
     }
 
     /**
@@ -42,7 +42,7 @@ public class ScoutingGroepInfo extends BaseInfo implements Parcelable, ClusterIt
     /**
      * The area where the ScoutingGroepInfo is located.
      */
-    public String deelgebied;
+    public String team;
 
     @Override
     /**
@@ -57,7 +57,7 @@ public class ScoutingGroepInfo extends BaseInfo implements Parcelable, ClusterIt
         super.writeToParcel(dest, flags);
         dest.writeString(naam);
         dest.writeString(adres);
-        dest.writeString(deelgebied);
+        dest.writeString(team);
     }
 
     @Override

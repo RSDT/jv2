@@ -11,15 +11,6 @@ import android.os.Parcelable;
  */
 public class BaseInfo implements Parcelable {
 
-
-    /**
-     * Initializes a new instance of BaseInfo.
-     * */
-    protected BaseInfo()
-    {
-
-    }
-
     /**
      * Initializes a new instance of BaseInfo from the parcel.
      * */

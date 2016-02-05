@@ -17,6 +17,7 @@ public class ApiRequest {
     public ApiRequest(URL url)
     {
         this.url = url;
+        this.type = GET;
     }
 
     /**
@@ -27,7 +28,16 @@ public class ApiRequest {
     public ApiRequest(URL url, String data)
     {
         this.url = url;
-        this.data = null;
+        this.data = data;
+
+        if(data != null && !data.isEmpty())
+        {
+            this.type = POST;
+        }
+        else
+        {
+            this.type = GET;
+        }
     }
 
     /**
@@ -39,6 +49,11 @@ public class ApiRequest {
      * The data that should be send(optional).
      * */
     private String data;
+
+    /**
+     * The type of the request, post or get.
+     * */
+    private String type;
 
 
     /**
@@ -54,4 +69,14 @@ public class ApiRequest {
     public String getData() {
         return data;
     }
+
+    /**
+     * Gets the type of the request.
+     * */
+    public String getType() {
+        return type;
+    }
+
+    public static String POST = "POST";
+    public static String GET = "GET";
 }

@@ -19,6 +19,17 @@ public class ApiResult {
     }
 
     /**
+     * Initializes a new instance of ApiResult.
+     * */
+    public ApiResult(ApiRequest request, String data, int responseCode)
+    {
+        this.request = request;
+        this.data = data;
+        this.responseCode = responseCode;
+    }
+
+
+    /**
      * The associated request.
      * */
     private ApiRequest request;
@@ -28,11 +39,20 @@ public class ApiResult {
      * */
     private String data;
 
+    /**
+     * The response code that has been received.
+     * */
+    private int responseCode;
+
     public ApiRequest getRequest() {
         return request;
     }
 
     public String getData() {
         return data;
+    }
+
+    public int getResponseCode() {
+        return responseCode;
     }
 }
