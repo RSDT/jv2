@@ -10,7 +10,7 @@ import java.util.ArrayList;
  * @since 5-2-2016
  * Description...
  */
-public final class SnackbarManager {
+public final class SnackbarControl {
 
     private static ArrayList<OnSnackBarShowCallback> listeners = new ArrayList<>();
 

@@ -140,7 +140,7 @@ public class MainActivity extends AppCompatActivity
     /**
      * Class that controls and maintains the FloatingActionButton menu.
      * */
-    private class FloatingActionButtonMenu implements SnackbarManager.OnSnackBarShowCallback
+    private class FloatingActionButtonMenu implements SnackbarControl.OnSnackBarShowCallback
     {
 
         /**
@@ -156,7 +156,7 @@ public class MainActivity extends AppCompatActivity
             /**
              * Listen to the OnShowSnackbar event, if it occurs we need to hide the menu.
              * */
-            SnackbarManager.addListener(this);
+            SnackbarControl.addListener(this);
 
             /**
              * Find the main FAB, and hook the show and hide method to the click event.
@@ -332,7 +332,7 @@ public class MainActivity extends AppCompatActivity
 
         public void destroy()
         {
-            SnackbarManager.removeListener(this);
+            SnackbarControl.removeListener(this);
         }
 
         /**
@@ -480,7 +480,7 @@ public class MainActivity extends AppCompatActivity
                 }
                 break;
             case Auth.TRACKER_AUTH_SUCCEEDED:
-                SnackbarManager.show(Snackbar.make(findViewById(R.id.content_layout), "Succesvol ingelogd.", Snackbar.LENGTH_SHORT));
+                SnackbarControl.show(Snackbar.make(findViewById(R.id.content_layout), "Succesvol ingelogd.", Snackbar.LENGTH_SHORT));
 
                 /**
                  * Update the navigation header, with the latest details.
@@ -488,7 +488,7 @@ public class MainActivity extends AppCompatActivity
                 updateNavHeader();
                 break;
             case Auth.TRACKER_AUTH_FAILED_UNAUTHORIZED:
-                SnackbarManager.show(Snackbar.make(findViewById(R.id.content_layout), "Kon niet inloggen.", Snackbar.LENGTH_LONG).setAction("Opnieuw", new View.OnClickListener() {
+                SnackbarControl.show(Snackbar.make(findViewById(R.id.content_layout), "Kon niet inloggen.", Snackbar.LENGTH_LONG).setAction("Opnieuw", new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         JotiApp.Auth.requireAuth();
@@ -496,7 +496,7 @@ public class MainActivity extends AppCompatActivity
                 }).setActionTextColor(Color.parseColor("#E91E63")));
                 break;
             case TRACKER_MAINACTIVITY_PREFERENCE_REQUIRED:
-                SnackbarManager.show(Snackbar.make(findViewById(R.id.content_layout), "Zet de " + message.getDescripition() + " eigenschap bij settings.", Snackbar.LENGTH_LONG).setAction("Ga naar", new View.OnClickListener() {
+                SnackbarControl.show(Snackbar.make(findViewById(R.id.content_layout), "Zet de " + message.getDescripition() + " eigenschap bij settings.", Snackbar.LENGTH_LONG).setAction("Ga naar", new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         navigationManager.switchTo(FragmentNavigationManager.PREFERENCE_TAG);
@@ -727,7 +727,7 @@ public class MainActivity extends AppCompatActivity
             /**
              * Show the Snackbar with the manager.
              * */
-            SnackbarManager.show(snackbar);
+            SnackbarControl.show(snackbar);
 
             /**
              * Begin the spotting.
