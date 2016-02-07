@@ -68,7 +68,6 @@ public class StaticApiManger extends ApiManager {
         protected void onPostExecute(ArrayList<ApiResult> results) {
             /**
              * Clear the pending and completed list, the completed list only contains one ApiTask's results.
-             * TODO: Implement completed to file method? To maintain data.
              * */
             pending.clear();
             completed.clear();
@@ -79,7 +78,14 @@ public class StaticApiManger extends ApiManager {
              * */
             JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_APIMANAGER_FETCHING_COMPLETED, "ApiManager", "Fetching completed."));
 
+            /**
+             * Start result processing on the results.
+             * */
             new StaticResultProcessingTask().execute(results.toArray(new ApiResult[results.size()]));
+
+            /**
+             * Log what has been done, and what we are doing.
+             * */
             Log.i("ApiManager", "ApiTask.onPostExecute() - started running StaticResultProcessingTask on results");
             Log.i("ApiManager", "ApiTask.onPostExecute() - completed " + results.size() + " tasks");
         }

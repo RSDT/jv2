@@ -5,6 +5,7 @@ import android.view.View;
 import android.widget.TextView;
 
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -51,19 +52,19 @@ public class HunterMapBehaviour extends MapBehaviour {
             @Override
             public void onConditionMet(Object[] args) {
 
-                View view = (View)args[0];
+                View view = (View) args[0];
 
-                GraphicalMapDataPair<Marker, MarkerOptions> pair = findPair(((Marker)args[1]).getId());
+                GraphicalMapDataPair<Marker, MarkerOptions> pair = findPair(((Marker) args[1]).getId());
 
-                HunterInfo associatedInfo = (HunterInfo)pair.second.second.get(0);
+                HunterInfo associatedInfo = (HunterInfo) pair.second.second.get(0);
 
-                ((TextView)view.findViewById(R.id.infoWindow_infoType)).setText("HunterInfo");
+                ((TextView) view.findViewById(R.id.infoWindow_infoType)).setText("HunterInfo");
 
-                ((TextView)view.findViewById(R.id.infoWindow_naam)).setText(associatedInfo.gebruiker);
+                ((TextView) view.findViewById(R.id.infoWindow_naam)).setText(associatedInfo.hunter);
 
-                ((TextView)view.findViewById(R.id.infoWindow_dateTime_adres)).setText(associatedInfo.datetime);
+                ((TextView) view.findViewById(R.id.infoWindow_dateTime_adres)).setText(associatedInfo.datetime);
 
-                ((TextView)view.findViewById(R.id.infoWindow_coordinaat)).setText(associatedInfo.latitude + " , " + associatedInfo.longitude);
+                ((TextView) view.findViewById(R.id.infoWindow_coordinaat)).setText(associatedInfo.latitude + " , " + associatedInfo.longitude);
 
             }
         });
@@ -110,7 +111,6 @@ public class HunterMapBehaviour extends MapBehaviour {
          * */
         HunterInfo[][] hunterInfos = HunterInfo.formJsonArray2D(data);
 
-
         /**
          * Loop through each user.
          * */
@@ -145,6 +145,7 @@ public class HunterMapBehaviour extends MapBehaviour {
             MarkerOptions mOptions = new MarkerOptions();
             mOptions.title(buildInfoTitle(new String[]{ "hunter" }, " "));
             mOptions.position(new LatLng(lastestInfo.latitude, lastestInfo.longitude));
+            mOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.hunter));
 
             /**
              * Add the marker to the buffer.
@@ -152,14 +153,6 @@ public class HunterMapBehaviour extends MapBehaviour {
             buffer.getMarkers().add(new MapDataPair<>(mOptions, new ArrayList<BaseInfo>(Arrays.asList(hunterInfos[h][0]))));
         }
         return buffer;
-    }
-
-    /**
-     * Merges the two map data.
-     * */
-    public static MapData merge(MapData mD1, MapData mD2)
-    {
-        return null;
     }
 
     /**

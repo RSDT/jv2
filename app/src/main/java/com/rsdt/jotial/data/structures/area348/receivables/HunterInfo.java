@@ -27,7 +27,8 @@ public class HunterInfo extends BaseInfo implements Parcelable {
     protected HunterInfo(Parcel in) {
         super(in);
         datetime = in.readString();
-        gebruiker = in.readString();
+        hunter = in.readString();
+        icon = in.readInt();
     }
 
     /**
@@ -38,13 +39,19 @@ public class HunterInfo extends BaseInfo implements Parcelable {
     /**
      * The user of the HunterInfo.
      */
-    public String gebruiker;
+    public String hunter;
+
+    /**
+     * The icon of the HunterInfo.
+     * */
+    public int icon;
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         super.writeToParcel(dest, flags);
         dest.writeString(datetime);
-        dest.writeString(gebruiker);
+        dest.writeString(hunter);
+        dest.writeInt(icon);
     }
 
     @Override

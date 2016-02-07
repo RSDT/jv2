@@ -12,14 +12,36 @@ import java.util.ArrayList;
  */
 public final class SnackbarControl {
 
-    private static ArrayList<OnSnackBarShowCallback> listeners = new ArrayList<>();
+    private static ArrayList<OnSnackBarShowCallback> showCallbacks = new ArrayList<>();
 
-    public static void addListener(OnSnackBarShowCallback callback) { listeners.add(callback); }
+    private static ArrayList<OnSnackbarDismissedCallback> dismissedCallbacks = new ArrayList<>();
 
-    public static void removeListener(OnSnackBarShowCallback callback) { listeners.remove(callback); }
+    public static void addShowListener(OnSnackBarShowCallback callback) { showCallbacks.add(callback); }
+
+    public static void removeShowListener(OnSnackBarShowCallback callback) { showCallbacks.remove(callback); }
+
+    public static void addDismissListener(OnSnackbarDismissedCallback callback) { dismissedCallbacks.add(callback); }
+
+    public static void removeDismissListener(OnSnackbarDismissedCallback callback) { dismissedCallbacks.remove(callback); }
 
     public static void show(Snackbar snackbar)
     {
+
+        snackbar.setCallback(new Snackbar.Callback() {
+            @Override
+            public void onDismissed(Snackbar snackbar, int event) {
+                super.onDismissed(snackbar, event);
+
+                OnSnackbarDismissedCallback callback;
+
+                for(int i = 0; i < dismissedCallbacks.size(); i++)
+                {
+                    callback = dismissedCallbacks.get(i);
+                    callback.onSnackbarDismissed(snackbar, event);
+                }
+            }
+        });
+
         /**
          * Allocate buffer callback outside loop.
          * */
@@ -28,9 +50,9 @@ public final class SnackbarControl {
         /**
          * Loop through each callback.
          * */
-        for(int i = 0; i < listeners.size(); i++)
+        for(int i = 0; i < showCallbacks.size(); i++)
         {
-            callback = listeners.get(i);
+            callback = showCallbacks.get(i);
             callback.onSnackbarShow(snackbar);
         }
 
@@ -46,6 +68,11 @@ public final class SnackbarControl {
     public interface OnSnackBarShowCallback
     {
         void onSnackbarShow(Snackbar snackbar);
+    }
+
+    public interface OnSnackbarDismissedCallback
+    {
+        void onSnackbarDismissed(Snackbar snackbar, int event);
     }
 
 }

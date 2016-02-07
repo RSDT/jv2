@@ -5,33 +5,86 @@
 
     <PreferenceCategory android:title="@string/pref_cat_account">
 
-        <EditTextPreference android:title="@string/pref_account_username_title" android:key="pref_account_username"
+        <EditTextPreference
+            android:title="@string/pref_account_username_title"
+            android:key="pref_account_username"
             android:summary="@string/pref_account_username_sum"/>
 
-        <EditTextPreference android:title="@string/pref_account_rank_title" android:key="pref_account_rank"
-            android:editable="false" android:summary="@string/pref_account_rank_sum" android:defaultValue="@string/pref_account_rank_def"/>
+        <EditTextPreference
+            android:title="@string/pref_account_rank_title"
+            android:key="pref_account_rank"
+            android:editable="false"
+            android:summary="@string/pref_account_rank_sum"
+            android:defaultValue="@string/pref_account_rank_def"/>
 
-        <ListPreference android:title="@string/pref_account_icon_title" android:key="pref_account_icon"
-            android:summary="@string/pref_account_icon_sum" android:defaultValue="@string/pref_account_icon_def"
-            android:entries="@array/pref_account_icon" android:entryValues="@array/pref_account_iconData"/>
+        <ListPreference
+            android:title="@string/pref_account_icon_title"
+            android:key="pref_account_icon"
+            android:summary="@string/pref_account_icon_sum"
+            android:defaultValue="@string/pref_account_icon_def"
+            android:entries="@array/pref_account_icon"
+            android:entryValues="@array/pref_account_icon_data"/>
 
-        <EditTextPreference android:title="@string/pref_account_key_title" android:key="pref_account_key"
-            android:editable="false" android:summary="@string/pref_account_key_sum"/>
+        <EditTextPreference
+            android:title="@string/pref_account_key_title"
+            android:key="pref_account_key"
+            android:editable="false"
+            android:summary="@string/pref_account_key_sum"/>
 
     </PreferenceCategory>
 
 
     <PreferenceCategory android:title="@string/pref_cat_map">
 
-        <EditTextPreference android:title="@string/pref_map_hunt_name_title" android:key="pref_map_hunt_name"
+        <EditTextPreference
+            android:title="@string/pref_map_hunt_name_title"
+            android:key="pref_map_hunt_name"
             android:summary="@string/pref_map_hunt_name_sum"/>
+
+        <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+            android:title="Smart MapViewing" android:summary="Een slimme manier op onderdelen te laten zien"
+        android:layout_width="match_parent" android:layout_height="match_parent">
+            <MultiSelectListPreference
+                android:dialogTitle="@string/pref_map_visibility_dialog_title"
+                android:key="pref_map_visibility"
+                android:title="@string/pref_map_visibility_title"
+                android:summary="@string/pref_map_visibility_sum"
+                android:entries="@array/pref_map_visibility_options"
+                android:entryValues="@array/pref_map_visibility_options_data"
+                android:defaultValue="@array/pref_map_visibility_options_def"
+                />
+            </PreferenceScreen>
+
 
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/pref_cat_sync">
 
-        <CheckBoxPreference android:title="@string/pref_sync_smart_title" android:key="pref_sync_smart"
+        <CheckBoxPreference
+            android:title="@string/pref_sync_smart_title"
+            android:key="pref_sync_smart"
             android:summary="@string/pref_sync_smart_sum"/>
+
+        <ListPreference
+            android:title="@string/pref_sync_smart_options_title"
+            android:key="pref_sync_smart_options"
+            android:summary="@string/pref_sync_smart_options_sum"
+            android:defaultValue="@string/pref_sync_smart_options_def"
+            android:entries="@array/pref_sync_smart_options"
+            android:entryValues="@array/pref_sync_smart_options_data"
+            android:dependency="pref_sync_smart"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/pref_cat_misc">
+
+        <EditTextPreference
+            android:key="pref_misc_walking_speed"
+            android:title="@string/pref_misc_walking_speed_title"
+            android:summary="@string/pref_misc_walking_speed_sum"
+            android:inputType="numberDecimal"
+            android:defaultValue="6.0"
+            />
 
     </PreferenceCategory>
 

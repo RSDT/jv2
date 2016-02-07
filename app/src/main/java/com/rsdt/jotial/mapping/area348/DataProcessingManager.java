@@ -59,8 +59,17 @@ public class DataProcessingManager implements ApiManager.OnApiTaskCompleteCallba
     /**
      * Method that will be invoked when ApiRequest queued and preformed at the same time give a result.
      * */
-    public void onApiTaskCompleted(ArrayList<ApiResult> results) {
-        DataProcessingTask dataProcessingTask = new DataProcessingTask();
+    public void onApiTaskCompleted(ArrayList<ApiResult> results, String origin) {
+
+        DataProcessingTask dataProcessingTask;
+        if(origin.equals(ApiManager.ORIGIN_PROCESS))
+        {
+            dataProcessingTask = new DataProcessingTask(false);
+        }
+        else
+        {
+            dataProcessingTask = new DataProcessingTask(true);
+        }
         dataProcessingTask.execute(results.toArray(new ApiResult[results.size()]));
         tasks.add(dataProcessingTask);
     }

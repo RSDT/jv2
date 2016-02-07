@@ -2,6 +2,7 @@ package com.rsdt.jotial.mapping.area348;
 
 import android.util.Log;
 
+import com.rsdt.jotial.communication.ApiManager;
 import com.rsdt.jotial.communication.ApiResult;
 import com.rsdt.jotial.mapping.area348.data.MapData;
 
@@ -37,10 +38,19 @@ public class StaticDataProcessingManager extends DataProcessingManager {
     }
 
     @Override
-    public void onApiTaskCompleted(ArrayList<ApiResult> results) {
-        StaticDataProcessingTask dataTask = new StaticDataProcessingTask();
-        dataTask.execute(results.toArray(new ApiResult[results.size()]));
-        tasks.add(dataTask);
+    public void onApiTaskCompleted(ArrayList<ApiResult> results, String origin) {
+
+        StaticDataProcessingTask dataProcessingTask;
+        if(origin.equals(ApiManager.ORIGIN_PROCESS))
+        {
+            dataProcessingTask = new StaticDataProcessingTask(false);
+        }
+        else
+        {
+            dataProcessingTask = new StaticDataProcessingTask(true);
+        }
+        dataProcessingTask.execute(results.toArray(new ApiResult[results.size()]));
+        tasks.add(dataProcessingTask);
     }
 
     /**
@@ -51,6 +61,12 @@ public class StaticDataProcessingManager extends DataProcessingManager {
      * */
     protected class StaticDataProcessingTask extends DataProcessingTask
     {
+
+        public StaticDataProcessingTask(boolean save)
+        {
+            super(save);
+        }
+
         @Override
         protected void onPostExecute(HashMap<String, MapData> hashMap) {
             super.onPostExecute(hashMap);

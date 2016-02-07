@@ -4,7 +4,7 @@ import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.annotation.Nullable;
+import android.support.annotation.MainThread;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
@@ -142,10 +142,16 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
     private ClusterManager<ScoutingGroepInfo> scClusterManager;
 
     /**
-     * The buffer that holds the last MapData for a short amount of time.
+     * The BundleHelper for the MapManager.
      * */
-    private Bundle fromBundleBuffer = null;
+    private BundleHelper bundleHelper = new BundleHelper();
 
+    /**
+     * Gets the BundleHelper of the MapManager.
+     * */
+    public BundleHelper getBundleHelper() {
+        return bundleHelper;
+    }
 
     /**
      * Initializes the MapManager for usage.
@@ -157,15 +163,18 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
         this.googleMap = googleMap;
 
         /**
-         * Check if the buffer is null, if not there's previous instance data available.
+         * Check if there's a local buffer, if so apply it.
          * */
-        if(fromBundleBuffer != null)
+        if(this.bundleHelper.hasLocalBuffer())
+        {
+            bundleHelper.applyFromLocalBuffer();
+        }
+        else
         {
             /**
-             * Extract the previous instance data, then set the buffer to null.
+             * This is the first create, so move the camera to the standard position.
              * */
-            fromBundle(fromBundleBuffer);
-            fromBundleBuffer = null;
+            googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(new CameraPosition(RP_LAT_LNG, ZOOM, TILT, BEARING)));
         }
 
         /**
@@ -198,11 +207,6 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
          * */
         specialEventHandler.initialize();
 
-        /**
-         * Read the saved map data.
-         * */
-        new MapStorageReadTask().execute("");
-
     }
 
     /**
@@ -211,7 +215,7 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
      * @since 4-2-2016
      * Task that reads the stored map data and (re)processes it.
      * */
-    private class MapStorageReadTask extends AsyncTask<String, Integer, ArrayList<ApiResult>>
+    private static class MapStorageReadTask extends AsyncTask<String, Integer, ArrayList<ApiResult>>
     {
 
         @Override
@@ -225,18 +229,46 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
             /**
              * Get all the keywords.
              * */
-            String[] keywords = MapStorageUtil.getAll();
+            String[] keywords;
+
+            /**
+             * Check if all the results should be read.
+             * */
+            if(params[0].equals(RESULT_ALL))
+            {
+                /**
+                 * If so, set the keywords array to all the RESULT identifiers.
+                 * */
+                keywords = MapStorageUtil.getAll();
+            }
+            else
+            {
+                keywords = params;
+            }
 
             /**
              * Loop through each keyword, meaning each result.
              * */
             for(int i = 0; i < keywords.length; i++)
             {
+                /**
+                 * Check if the AppData has data of the keyword.
+                 * */
                 if(AppData.hasSave(keywords[i]))
                 {
+                    /**
+                     * Get the result from the AppData.
+                     * */
                     ApiResult result = AppData.getObject(keywords[i], ApiResult.class);
+
+                    /**
+                     * Check if it isn't null, if so add it.
+                     * */
                     if(result != null)
-                    { results.add(result); }
+                    {
+                        results.add(result);
+                        Log.i("MapStorageReadTask", keywords[i] + " data is found.");
+                    }
                 }
                 else { Log.i("MapStorageReadTask", "No " + keywords[i] + " data is found."); }
             }
@@ -252,6 +284,9 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
              * */
             MapManager.getApiManager().process(apiResults);
         }
+
+
+        public static final String RESULT_ALL = "RESULT_ALL";
 
         public static final String RESULT_SC = "RESULT_SC";
         public static final String RESULT_FOTO = "RESULT_FOTO";
@@ -270,9 +305,15 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
      * @author Dingenis Sieger Sinke
      * @version 1.0
      * @since 4-2-2016
+     * Contains various util methods.
      * */
-    private static class MapStorageUtil
+    public static class MapStorageUtil
     {
+
+        public static void readAllFromSave() { new MapStorageReadTask().execute(MapStorageReadTask.RESULT_ALL); }
+
+        public static void readFromSave(String[] parts) { new MapStorageReadTask().execute(parts); }
+
         public static final String[] getAll() { return new String[] {
                 MapStorageReadTask.RESULT_SC,
                 MapStorageReadTask.RESULT_FOTO,
@@ -285,6 +326,232 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                 MapStorageReadTask.RESULT_VOS_F,
                 MapStorageReadTask.RESULT_VOS_X,
         }; }
+    }
+
+    /**
+     * @author Dingenis Sieger Sinke
+     * @version 1.0
+     * @since 4-2-2016
+     * Class to help putting the map data into a bundle.
+     * */
+    public class BundleHelper
+    {
+
+        /**
+         * A buffer to hold the PreviousInstanceState until the MapManager has been initialized,
+         * we only can apply the state when the GoogleMap is active.
+         * */
+        PreviousInstanceState buffer;
+
+        /**
+         * Determines if the BundleHelper has a local buffer.
+         *
+         * @return Value indicating if the BundleHelper has a local buffer.
+         * */
+        public boolean hasLocalBuffer() {
+            return (buffer != null);
+        }
+
+        /**
+         * Puts the MapManager's data into a bundle.
+         *
+         * @return A bundle with the MapManager's data in it.
+         * */
+        public Bundle toBundle()
+        {
+            Bundle buffer = new Bundle();
+            toBundle(buffer);
+            return buffer;
+        }
+
+        /**
+         * Puts the MapManager's data into a bundle.
+         *
+         * @param bundle The bundle you want the data to be put in.
+         * */
+        public void toBundle(Bundle bundle)
+        {
+            /**
+             * Put the camera's position in the bundle.
+             * */
+            bundle.putParcelable("camera", googleMap.getCameraPosition());
+
+            MapBehaviour behaviour;
+            String[] keywords = new String[mapBehaviourManager.size()];
+            int count = 0;
+
+            for(HashMap.Entry<String, MapBehaviour> entry : mapBehaviourManager.entrySet())
+            {
+                behaviour = entry.getValue();
+                if(behaviour instanceof VosMapBehaviour)
+                {
+                    bundle.putParcelable("vos " + ((VosMapBehaviour) behaviour).getDeelgebied(), behaviour.to());
+                    keywords[count] = "vos " + ((VosMapBehaviour) behaviour).getDeelgebied();
+                }
+
+                if(behaviour instanceof HunterMapBehaviour)
+                {
+                    bundle.putParcelable("hunter", behaviour.to());
+                    keywords[count] = "hunter";
+                }
+
+                if (behaviour instanceof ScoutingGroepMapBehaviour)
+                {
+                    bundle.putParcelable("sc", behaviour.to());
+                    keywords[count] = "sc";
+                }
+
+                if(behaviour instanceof FotoOpdrachtMapBehaviour)
+                {
+                    bundle.putParcelable("foto", behaviour.to());
+                    keywords[count] = "foto";
+                }
+                count++;
+            }
+            bundle.putStringArray("keywords", keywords);
+        }
+
+        /**
+         * Gets the previous data of the MapManager from the bundle, and buffers it locally.
+         * So that we can apply the state when the MapManager is initialized.
+         *
+         * @param bundle The bundle where the data is located.
+         * */
+        public void fromBundleAndBuffer(Bundle bundle)
+        {
+            /**
+             * Create buffer to hold our data.
+             * */
+            PreviousInstanceState state = new PreviousInstanceState();
+
+            /**
+             * Get the CameraPosition out of the Bundle.
+             * */
+            state.cameraPosition =  bundle.getParcelable("camera");
+
+            /**
+             * Get the keywords for the various MapData.
+             * */
+            String[] keywords = bundle.getStringArray("keywords");
+
+            /**
+             * Loop through each keyword.
+             * */
+            for(int i = 0; i < keywords.length; i++)
+            {
+                state.mapData.put(keywords[i], (MapData)bundle.getParcelable(keywords[i]));
+            }
+            this.buffer = state;
+        }
+
+        @MainThread
+        /**
+         * Applies the previous instance state to the current.
+         * Meaning the camera position, and all markers, polylines and polygons
+         * will be added again.
+         *
+         * @param state The PreviousInstanceState that contains the data.
+         * */
+        public void apply(PreviousInstanceState state)
+        {
+            /**
+             * Move the camera's position to the old one.
+             * */
+            googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(state.cameraPosition));
+
+            /**
+             * Allocate buffer outside loop.
+             * */
+            MapBehaviour behaviour = null;
+
+            /**
+             * Loop through each <String, MapData> entry.
+             * */
+            for(HashMap.Entry<String, MapData> entry : state.mapData.entrySet())
+            {
+                if(entry.getKey().startsWith("vos"))
+                {
+                    behaviour = new VosMapBehaviour(entry.getKey().split(" ")[1].toCharArray()[0], entry.getValue(), googleMap);
+                }
+                else
+                {
+                    switch (entry.getKey())
+                    {
+                        case "hunter":
+                            behaviour = new HunterMapBehaviour(entry.getValue(), googleMap);
+                            break;
+                        case "sc":
+                            behaviour = new ScoutingGroepMapBehaviour(entry.getValue(), googleMap);
+                            break;
+                        case "foto":
+                            behaviour = new FotoOpdrachtMapBehaviour(entry.getValue(), googleMap);
+                            break;
+                    }
+                }
+                mapBehaviourManager.put(entry.getKey(), behaviour);
+            }
+            new MapStorageReadTask().execute(MapStorageReadTask.RESULT_SC);
+        }
+
+        @MainThread
+        /**
+         * Applies the buffered previous instance state to the current.
+         * Meaning the camera position, and all markers, polylines and polygons
+         * will be added again.
+         * */
+        private void applyFromLocalBuffer()
+        {
+            /**
+             * Check if the buffer is not null.
+             * */
+            if(buffer != null)
+            {
+                /**
+                 * Apply the buffer, meaning all saved items will be added to the map.
+                 * */
+                apply(buffer);
+
+                /**
+                 * Destroy and set the state to null.
+                 * */
+                buffer.destroy();
+                buffer = null;
+            }
+        }
+
+        /**
+         * @author Dingenis Sieger Sinke
+         * @version 1.0
+         * @since 4-2-2016
+         * Class for holding the state of a previous instance.
+         * */
+        public class PreviousInstanceState
+        {
+            /**
+             * The camera position of state.
+             * */
+            CameraPosition cameraPosition;
+
+            /**
+             * The map data of the state.
+             * */
+            HashMap<String, MapData> mapData = new HashMap<>();
+
+            /**
+             * Destroys the state.
+             * */
+            public void destroy()
+            {
+                cameraPosition = null;
+
+                if(mapData != null)
+                {
+                    mapData.clear();
+                    mapData = null;
+                }
+            }
+
+        }
     }
 
     /**
@@ -417,9 +684,10 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
 
                         if (diffInHours > 30)
                             diffInHours = 30;
-                        cOptions.radius(diffInHours * 6000);
+                        float mPerHour = ( Float.parseFloat(PreferenceManager.getDefaultSharedPreferences(JotiApp.getContext()).getString("pref_misc_walking_speed", "6.0f")) * 1000);
+                        cOptions.radius(diffInHours *  mPerHour);
                     } catch (Exception e) {
-                        Log.e("MapManger", "onGetInfoWindow(View, Marker) - circle radius calculation with vos's date failed");
+                        Log.e("MapManger", "onGetInfoWindow(View, Marker) - circle radius calculation with vos's date failed", e);
                     }
 
                     /**
@@ -462,7 +730,7 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                     ((TextView) view.findViewById(R.id.infoWindow_infoType)).setText("ScoutingGroep");
                     ((TextView) view.findViewById(R.id.infoWindow_naam)).setText(mArgs[1]);
                     ((TextView) view.findViewById(R.id.infoWindow_dateTime_adres)).setText(mArgs[2]);
-                    ((TextView) view.findViewById(R.id.infoWindow_coordinaat)).setText(mArgs[3] + " , " + mArgs[5]);
+                    ((TextView) view.findViewById(R.id.infoWindow_coordinaat)).setText(mArgs[3] + " , " + mArgs[4]);
 
                     view.findViewById(R.id.infoWindow_infoType).setBackgroundColor(MapManager.parse(mArgs[5], 255));
 
@@ -631,11 +899,10 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
         }
     }
 
-
     /**
      * Gets invoked when ScoutingGroep data is available, cause of the filter applied to this callback.
      * */
-    public void onApiTaskCompleted(ArrayList<ApiResult> results) {
+    public void onApiTaskCompleted(ArrayList<ApiResult> results, String origin) {
 
         /**
          * Allocate one ApiResult out the loop as buffer.
@@ -676,9 +943,18 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
             scClusterManager.cluster();
 
             /**
-             * AppData them in the background.
+             * Check if the origin is the preform() method.
+             * If so the data is not saved data, it's straight
+             * from a request. So save it.
              * */
-            AppData.cacheObjectAsJsonInBackground(currentResult, MapStorageReadTask.RESULT_SC);
+            if(origin.equals(ApiManager.ORIGIN_PREFORM))
+            {
+                /**
+                 * Save them in the background with the AppData class.
+                 * */
+                AppData.cacheObjectAsJsonInBackground(currentResult, MapStorageReadTask.RESULT_SC);
+            }
+
         }
 
         /**
@@ -737,123 +1013,6 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
         }
     }
 
-
-    /**
-     * Puts the MapManager's data into a bundle.
-     *
-     * @return A bundle with the MapManager's data in it.
-     * */
-    public Bundle toBundle()
-    {
-        Bundle buffer = new Bundle();
-        toBundle(buffer);
-        return buffer;
-    }
-
-    /**
-     * Puts the MapManager's data into a bundle.
-     *
-     * @param bundle The bundle you want the data to be put in.
-     * */
-    public void toBundle(Bundle bundle)
-    {
-        /**
-         * Put the camera's position in the bundle.
-         * */
-        bundle.putParcelable("camera", googleMap.getCameraPosition());
-
-
-        MapBehaviour behaviour;
-        String[] keywords = new String[mapBehaviourManager.size()];
-        int count = 0;
-
-        for(HashMap.Entry<String, MapBehaviour> entry : mapBehaviourManager.entrySet())
-        {
-            behaviour = entry.getValue();
-            if(behaviour instanceof VosMapBehaviour)
-            {
-                bundle.putParcelable("vos " + ((VosMapBehaviour) behaviour).getDeelgebied(), behaviour.to());
-                keywords[count] = "vos " + ((VosMapBehaviour) behaviour).getDeelgebied();
-            }
-
-            if(behaviour instanceof HunterMapBehaviour)
-            {
-                bundle.putParcelable("hunter", behaviour.to());
-                keywords[count] = "hunter";
-            }
-
-            if (behaviour instanceof ScoutingGroepMapBehaviour)
-            {
-                bundle.putParcelable("sc", behaviour.to());
-                keywords[count] = "sc";
-            }
-
-            if(behaviour instanceof FotoOpdrachtMapBehaviour)
-            {
-                bundle.putParcelable("foto", behaviour.to());
-                keywords[count] = "foto";
-            }
-            count++;
-        }
-
-        bundle.putStringArray("keywords", keywords);
-    }
-
-    /**
-     * Postpones the from bundle creation until the initialize.
-     * */
-    public void postponeFromBundle(Bundle bundle)
-    {
-        fromBundleBuffer = bundle;
-    }
-
-    /**
-     * Gets the previous data of the MapManager from the bundle, and adds it.
-     * */
-    public void fromBundle(Bundle bundle)
-    {
-        /**
-         * Move the camera's position to the old one.
-         * */
-        googleMap.moveCamera(CameraUpdateFactory.newCameraPosition((CameraPosition)bundle.getParcelable("camera")));
-
-        /**
-         * Get the keywords for the various MapData.
-         * */
-        String[] keywords = bundle.getStringArray("keywords");
-
-        /**
-         * Allocate buffer outside loop.
-         * */
-        MapBehaviour behaviour = null;
-
-        /**
-         * Loop through each keyword with it's associated MapData.
-         * */
-        for(int i = 0; i < keywords.length; i++)
-        {
-            if(keywords[i].startsWith("vos")) {
-                behaviour = new VosMapBehaviour(keywords[i].split(" ")[1].toCharArray()[0], (MapData)bundle.getParcelable(keywords[i]), googleMap);
-            }
-            else
-            {
-                switch (keywords[i])
-                {
-                    case "hunter":
-                        behaviour = new HunterMapBehaviour((MapData)bundle.getParcelable(keywords[i]), googleMap);
-                        break;
-                    case "sc":
-                        behaviour = new ScoutingGroepMapBehaviour((MapData)bundle.getParcelable(keywords[i]), googleMap);
-                        break;
-                    case "foto":
-                        behaviour = new FotoOpdrachtMapBehaviour((MapData)bundle.getParcelable(keywords[i]), googleMap);
-                        break;
-                }
-            }
-            this.mapBehaviourManager.put(keywords[i], behaviour);
-        }
-    }
-
     /**
      * Disposes the MapManager and removes the listeners.
      * */
@@ -861,14 +1020,25 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
     {
         if(this.scClusterManager != null)
         {
-            this.scClusterManager.clearItems();
-            this.scClusterManager = null;
+            scClusterManager.clearItems();
+            scClusterManager = null;
+        }
+
+        if(this.spottingManager != null)
+        {
+            spottingManager.destroy();
+            spottingManager = null;
+        }
+
+        if(this.specialEventHandler != null)
+        {
+            specialEventHandler = null;
         }
 
         if(this.mapBehaviourManager != null)
         {
-            this.mapBehaviourManager.destroy();
-            this.mapBehaviourManager = null;
+            mapBehaviourManager.destroy();
+            mapBehaviourManager = null;
         }
 
         apiManager.removeListener(this);
@@ -945,7 +1115,6 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                          * */
                         return !result.getRequest().getUrl().getPath().split("/")[1].equals("sc") &&
                                 !result.getRequest().getUrl().getPath().split("/")[1].equals("login")
-                                && !result.getRequest().getUrl().getPath().split("/")[1].equals("hunter")
                                 && result.getRequest().getType().equals(ApiRequest.GET)
                                 && result.getResponseCode() == 200;
                     }
@@ -978,7 +1147,7 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
         {
             apiManager.addListener(new ApiManager.OnApiTaskCompleteCallback() {
                 @Override
-                public void onApiTaskCompleted(ArrayList<ApiResult> results) {
+                public void onApiTaskCompleted(ArrayList<ApiResult> results, String origin) {
 
                     /**
                      * Allocate buffer outside loop.
@@ -1379,5 +1548,13 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
      * Defines a tracker identifier for the clustering process completion.
      * */
     public static final String TRACKER_MAPMANAGER_CLUSTERING_COMPLETED = "TRACKER_MAPMANAGER_CLUSTERING_COMPLETED";
+
+    public static final LatLng RP_LAT_LNG = new LatLng(52.015335, 6.025965);
+
+    public static final float ZOOM = 7;
+
+    public static final float TILT = 0;
+
+    public static final float BEARING = 0;
 
 }

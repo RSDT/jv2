@@ -4,6 +4,7 @@ import android.view.View;
 import android.widget.TextView;
 
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -52,9 +53,9 @@ public class FotoOpdrachtMapBehaviour extends MapBehaviour {
 
                 ((TextView) view.findViewById(R.id.infoWindow_infoType)).setText("FotoOpdrachtInfo");
 
-                ((TextView) view.findViewById(R.id.infoWindow_naam)).setText(associatedInfo.naam);
+                ((TextView) view.findViewById(R.id.infoWindow_naam)).setText(associatedInfo.info);
 
-                ((TextView) view.findViewById(R.id.infoWindow_dateTime_adres)).setText(associatedInfo.info);
+                ((TextView) view.findViewById(R.id.infoWindow_dateTime_adres)).setText(associatedInfo.extra);
 
                 ((TextView) view.findViewById(R.id.infoWindow_coordinaat)).setText(associatedInfo.latitude + " , " + associatedInfo.longitude);
             }
@@ -83,7 +84,6 @@ public class FotoOpdrachtMapBehaviour extends MapBehaviour {
 
     /**
      * Deserializes a string of data to the FotoOpdrachtMapBehaviour MapData.
-     * TODO: Set icons.
      * */
     public static final MapData toMapData(String data)
     {
@@ -105,7 +105,17 @@ public class FotoOpdrachtMapBehaviour extends MapBehaviour {
             MarkerOptions mOptions = new MarkerOptions();
             mOptions.anchor(0.5f, 0.5f);
             mOptions.position(new LatLng(fotoOpdrachten[i].latitude, fotoOpdrachten[i].longitude));
-            mOptions.title(buildInfoTitle(new String[]{ "foto" }, " "));
+            mOptions.title(buildInfoTitle(new String[]{"foto"}, " "));
+
+            if(fotoOpdrachten[i].klaar)
+            {
+                mOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.foto_klaar));
+            }
+            else
+            {
+                mOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.foto_todo));
+            }
+
             buffer.getMarkers().add(new MapDataPair<>(mOptions, new ArrayList<BaseInfo>(Arrays.asList(fotoOpdrachten[i]))));
         }
         return buffer;

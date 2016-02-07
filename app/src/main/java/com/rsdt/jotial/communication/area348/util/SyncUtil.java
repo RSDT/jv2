@@ -66,7 +66,7 @@ public class SyncUtil {
                 MapManager.getApiManager().queue(new ApiRequest(LinkBuilder.build(new String[]{"hunter"}), new Gson().toJson(object)));
                 MapManager.getApiManager().addListener(new ApiManager.OnApiTaskCompleteCallback() {
                     @Override
-                    public void onApiTaskCompleted(ArrayList<ApiResult> results) {
+                    public void onApiTaskCompleted(ArrayList<ApiResult> results, String origin) {
                         /**
                          * Write to the log a location has been sent.
                          * */
@@ -134,7 +134,7 @@ public class SyncUtil {
                 MapManager.getApiManager().queue(new ApiRequest(LinkBuilder.build(new String[]{"vos"}), new Gson().toJson(object)));
                 MapManager.getApiManager().addListener(new ApiManager.OnApiTaskCompleteCallback() {
                     @Override
-                    public void onApiTaskCompleted(ArrayList<ApiResult> results) {
+                    public void onApiTaskCompleted(ArrayList<ApiResult> results, String origin) {
                         /**
                          * Write to the log a location has been sent.
                          * */

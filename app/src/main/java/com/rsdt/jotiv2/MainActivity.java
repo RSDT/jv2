@@ -57,6 +57,9 @@ public class MainActivity extends AppCompatActivity
     private SpottingManager spottingManager = new SpottingManager();
 
 
+    /**
+     * The FloatingActionButtonMenu of the app, for controlling and managing the FAB menu.
+     * */
     private FloatingActionButtonMenu floatingActionButtonMenu = new FloatingActionButtonMenu();
 
     @Override
@@ -64,15 +67,16 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
 
 
-        if(!MapManager.StaticPart.isInitialized)
-        {
+        /**
+         * Check if the StaticPart has been initialized,
+         * if not then do it(this means that were on boot-up).
+         * */
+        if (!MapManager.StaticPart.isInitialized) {
             /**
              * Initializes the static part of the MapManager.
              * */
             MapManager.StaticPart.initialize();
-        }
-        else
-        {
+        } else {
 
         }
 
@@ -82,6 +86,7 @@ public class MainActivity extends AppCompatActivity
         JotiApp.MainTracker.subscribe(this, null);
 
         setContentView(R.layout.activity_main);
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -91,20 +96,42 @@ public class MainActivity extends AppCompatActivity
         drawer.setDrawerListener(toggle);
         toggle.syncState();
 
+        /**
+         * Initialize the FragmentNavigationManager.
+         * */
         navigationManager.initialize(savedInstanceState);
 
-        if(savedInstanceState != null)
-        {
-            navigationManager.mapFragment.onCreate(savedInstanceState);
-        }
-
-        //setupFAB();
-
-
+        /**
+         * Initialize the FloatingActionButtonMenu.
+         * */
         floatingActionButtonMenu.initialize();
 
-        updateNavHeader();
+        /**
+         * Check if the savedInstance is null, if so this is the first run.
+         * */
+        if (savedInstanceState == null) {
 
+            /**
+             * Show a Snackbar to inform the user about the loading.
+             * */
+            SnackbarControl.show(Snackbar.make(findViewById(R.id.content_layout), "Loading save files, hold on.", Snackbar.LENGTH_LONG));
+
+            /**
+             * Read the MapData from the save.
+             * */
+            MapManager.MapStorageUtil.readAllFromSave();
+
+            /**
+             * Switch to the MAP page.
+             * */
+            navigationManager.switchTo(FragmentNavigationManager.MAP_TAG);
+        }
+        else
+        {
+            mapManager.getBundleHelper().fromBundleAndBuffer(savedInstanceState);
+        }
+
+        updateNavHeader();
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
@@ -135,18 +162,174 @@ public class MainActivity extends AppCompatActivity
 
     }
 
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        mapManager.getBundleHelper().toBundle(savedInstanceState);
+        navigationManager.saveInstanceState(savedInstanceState);
+    }
+
+    @Override
+    public void onBackPressed() {
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
+    }
+
+    public void onResume()
+    {
+        super.onResume();
+
+        /**
+         * Get the map async.
+         * */
+        ((MapFragment)getFragmentManager().findFragmentById(R.id.container_map)).getMapAsync(this);
+
+        /**
+         * Report to the tracker, that the UI is available.
+         * */
+        JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_MAINACTIVITY_UI_AVAILABLE, "MainActivity", "The UI is available."));
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        mapManager.initialize(googleMap);
+        googleMap.setInfoWindowAdapter(new JotiInfoWindowAdapter(this.getLayoutInflater(), mapManager.getMapBehaviourManager()));
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    @SuppressWarnings("StatementWithEmptyBody")
+    @Override
+    public boolean onNavigationItemSelected(MenuItem item) {
+        // Handle navigation view item clicks here.
+        int id = item.getItemId();
+
+        if (id == R.id.nav_map) {
+
+            /**
+             *
+             * Check if there's a spot going on, if so end it.
+             * NOTE: While spotting, when the user clicks on the map item,
+             * he probably will intend to end the spotting.
+             * */
+            if(spottingManager.isActive)
+            {
+                spottingManager.endSpot();
+            }
+
+            navigationManager.switchTo(FragmentNavigationManager.MAP_TAG);
+        } else if (id == R.id.nav_settings) {
+            navigationManager.switchTo(FragmentNavigationManager.PREFERENCE_TAG);
+        } else if (id == R.id.nav_spot) {
+            /**
+             * Switch to the Map page.
+             * */
+            navigationManager.switchTo(FragmentNavigationManager.MAP_TAG);
+
+            /**
+             * Begin spotting.
+             * */
+            spottingManager.beginSpot();
+        }
+
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer.closeDrawer(GravityCompat.START);
+        return true;
+    }
+
+    @Override
+    /**
+     * The callback for the TrackerSubscriber MainActivity.
+     * */
+    public void onConditionMet(Tracker.TrackerMessage message) {
+        switch (message.getIdentifier())
+        {
+            case Auth.TRACKER_AUTH_REQUIRED:
+
+                if(!JotiApp.Auth.isAuthDialogActive())
+                {
+                    DialogFragment fragment = new JotiLoginDialogFragment();
+                    fragment.show(getFragmentManager(), "login");
+                    JotiApp.Auth.setAuthDialogActive(true);
+                }
+
+                break;
+            case TRACKER_MAINACTIVITY_UI_NAV_SWITCH:
+
+                /**
+                 * Check if there's a spotting active, if so interrupt it.
+                 * */
+                if(spottingManager.isActive)
+                {
+                    /**
+                     * End the spot.
+                     * */
+                    spottingManager.endSpot();
+                }
+                break;
+            case Auth.TRACKER_AUTH_SUCCEEDED:
+                SnackbarControl.show(Snackbar.make(findViewById(R.id.content_layout), "Succesvol ingelogd.", Snackbar.LENGTH_SHORT));
+
+                /**
+                 * Update the navigation header, with the latest details.
+                 * */
+                updateNavHeader();
+                break;
+            case Auth.TRACKER_AUTH_FAILED_UNAUTHORIZED:
+                SnackbarControl.show(Snackbar.make(findViewById(R.id.content_layout), "Kon niet inloggen.", Snackbar.LENGTH_LONG).setAction("Opnieuw", new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        JotiApp.Auth.requireAuth();
+                    }
+                }).setActionTextColor(Color.parseColor("#E91E63")));
+                break;
+            case TRACKER_MAINACTIVITY_PREFERENCE_REQUIRED:
+                SnackbarControl.show(Snackbar.make(findViewById(R.id.content_layout), "Zet de " + message.getDescripition() + " eigenschap bij settings.", Snackbar.LENGTH_LONG).setAction("Ga naar", new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        navigationManager.switchTo(FragmentNavigationManager.PREFERENCE_TAG);
+                    }
+                }).setActionTextColor(Color.parseColor("#E91E63")));
+                break;
+        }
+    }
+
+    @Override
+    public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
+
+        switch(level)
+        {
+            case TRIM_MEMORY_RUNNING_LOW:
+                MapManager.trim();
+                break;
+        }
+
+    }
 
 
     /**
      * Class that controls and maintains the FloatingActionButton menu.
      * */
-    private class FloatingActionButtonMenu implements SnackbarControl.OnSnackBarShowCallback
+    private class FloatingActionButtonMenu implements SnackbarControl.OnSnackBarShowCallback, SnackbarControl.OnSnackbarDismissedCallback
     {
 
         /**
          * Value indicating if the menu is visible or not.
          * */
         public boolean visible = false;
+
+        public boolean bar = false;
 
         /**
          * Initializes the menu.
@@ -156,7 +339,10 @@ public class MainActivity extends AppCompatActivity
             /**
              * Listen to the OnShowSnackbar event, if it occurs we need to hide the menu.
              * */
-            SnackbarControl.addListener(this);
+            SnackbarControl.addShowListener(this);
+
+
+            SnackbarControl.addDismissListener(this);
 
             /**
              * Find the main FAB, and hook the show and hide method to the click event.
@@ -257,9 +443,18 @@ public class MainActivity extends AppCompatActivity
          * */
         public void show()
         {
-            repositionFab((FloatingActionButton)findViewById(R.id.fab_sync), FAB_SHOW, 1);
-            repositionFab((FloatingActionButton)findViewById(R.id.fab_search), FAB_SHOW, 2);
-            repositionFab((FloatingActionButton)findViewById(R.id.fab_follow), FAB_SHOW, 3);
+            if(bar)
+            {
+                repositionFab((FloatingActionButton)findViewById(R.id.fab_sync), FAB_SHOW_WITH_BAR, 1);
+                repositionFab((FloatingActionButton) findViewById(R.id.fab_search), FAB_SHOW_WITH_BAR, 2);
+                repositionFab((FloatingActionButton)findViewById(R.id.fab_follow), FAB_SHOW_WITH_BAR, 3);
+            }
+            else
+            {
+                repositionFab((FloatingActionButton)findViewById(R.id.fab_sync), FAB_SHOW, 1);
+                repositionFab((FloatingActionButton) findViewById(R.id.fab_search), FAB_SHOW, 2);
+                repositionFab((FloatingActionButton)findViewById(R.id.fab_follow), FAB_SHOW, 3);
+            }
         }
 
         /**
@@ -327,12 +522,19 @@ public class MainActivity extends AppCompatActivity
 
         @Override
         public void onSnackbarShow(Snackbar snackbar) {
-            //hide();
+            bar = true;
+        }
+
+        @Override
+        public void onSnackbarDismissed(Snackbar snackbar, int event) {
+
+            bar = false;
         }
 
         public void destroy()
         {
-            SnackbarControl.removeListener(this);
+            SnackbarControl.removeShowListener(this);
+            SnackbarControl.removeDismissListener(this);
         }
 
         /**
@@ -360,150 +562,11 @@ public class MainActivity extends AppCompatActivity
          * */
         public static final String FAB_HIDE = "FAB_HIDE";
 
-    }
+        public static final String FAB_SHOW_WITH_BAR = "FAB_SHOW_WITH_BAR";
 
-    public void onSaveInstanceState(Bundle savedInstanceState) {
-        //savedInstanceState.putBundle("mapManager", mapManager.toBundle());
-        //navigationManager.saveInstanceState(savedInstanceState);
-        navigationManager.mapFragment.onSaveInstanceState(savedInstanceState);
-    }
-
-    @Override
-    public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
-    }
-
-    public void onResume()
-    {
-        super.onResume();
-
-        /**
-         * Get the map async.
-         * */
-        ((MapFragment)getFragmentManager().findFragmentById(R.id.container_map)).getMapAsync(this);
-
-        /**
-         * Report to the tracker, that the UI is available.
-         * */
-        JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_MAINACTIVITY_UI_AVAILABLE, "MainActivity", "The UI is available."));
-    }
-
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        mapManager.initialize(googleMap);
-        googleMap.setInfoWindowAdapter(new JotiInfoWindowAdapter(this.getLayoutInflater(), mapManager.getMapBehaviourManager()));
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        return super.onOptionsItemSelected(item);
-    }
+        public static final String FAB_HIDE_WITH_BAR = "FAB_HIDE_WITH_BAR";
 
 
-    @SuppressWarnings("StatementWithEmptyBody")
-    @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
-        int id = item.getItemId();
-
-        if (id == R.id.nav_map) {
-
-            /**
-             *
-             * Check if there's a spot going on, if so end it.
-             * NOTE: While spotting, when the user clicks on the map item,
-             * he probably will intend to end the spotting.
-             * */
-            if(spottingManager.isActive)
-            {
-                spottingManager.endSpot();
-            }
-
-            navigationManager.switchTo(FragmentNavigationManager.MAP_TAG);
-        } else if (id == R.id.nav_settings) {
-            navigationManager.switchTo(FragmentNavigationManager.PREFERENCE_TAG);
-        } else if (id == R.id.nav_spot) {
-            /**
-             * Switch to the Map page.
-             * */
-            navigationManager.switchTo(FragmentNavigationManager.MAP_TAG);
-
-            /**
-             * Begin spotting.
-             * */
-            spottingManager.beginSpot();
-        }
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
-        return true;
-    }
-
-    @Override
-    /**
-     * The callback for the TrackerSubscriber MainActivity.
-     * */
-    public void onConditionMet(Tracker.TrackerMessage message) {
-        switch (message.getIdentifier())
-        {
-            case Auth.TRACKER_AUTH_REQUIRED:
-
-                if(!JotiApp.Auth.isAuthDialogActive())
-                {
-                    DialogFragment fragment = new JotiLoginDialogFragment();
-                    fragment.show(getFragmentManager(), "login");
-                    JotiApp.Auth.setAuthDialogActive(true);
-                }
-
-                break;
-            case TRACKER_MAINACTIVITY_UI_NAV_SWITCH:
-
-                /**
-                 * Check if there's a spotting active, if so interrupt it.
-                 * */
-                if(spottingManager.isActive)
-                {
-                    /**
-                     * End the spot.
-                     * */
-                    spottingManager.endSpot();
-                }
-                break;
-            case Auth.TRACKER_AUTH_SUCCEEDED:
-                SnackbarControl.show(Snackbar.make(findViewById(R.id.content_layout), "Succesvol ingelogd.", Snackbar.LENGTH_SHORT));
-
-                /**
-                 * Update the navigation header, with the latest details.
-                 * */
-                updateNavHeader();
-                break;
-            case Auth.TRACKER_AUTH_FAILED_UNAUTHORIZED:
-                SnackbarControl.show(Snackbar.make(findViewById(R.id.content_layout), "Kon niet inloggen.", Snackbar.LENGTH_LONG).setAction("Opnieuw", new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        JotiApp.Auth.requireAuth();
-                    }
-                }).setActionTextColor(Color.parseColor("#E91E63")));
-                break;
-            case TRACKER_MAINACTIVITY_PREFERENCE_REQUIRED:
-                SnackbarControl.show(Snackbar.make(findViewById(R.id.content_layout), "Zet de " + message.getDescripition() + " eigenschap bij settings.", Snackbar.LENGTH_LONG).setAction("Ga naar", new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        navigationManager.switchTo(FragmentNavigationManager.PREFERENCE_TAG);
-                    }
-                }).setActionTextColor(Color.parseColor("#E91E63")));
-                break;
-        }
     }
 
     /**
@@ -541,9 +604,7 @@ public class MainActivity extends AppCompatActivity
                 /**
                  * Switch to the saved tag.
                  * */
-                //switchTo(savedInstanceState.getString("currentFragmentTag"));
-
-                updateCheckedState();
+                switchTo(savedInstanceState.getString("currentFragmentTag"));
             }
         }
 
@@ -763,22 +824,17 @@ public class MainActivity extends AppCompatActivity
 
     }
 
-    @Override
-    public void onTrimMemory(int level) {
-        super.onTrimMemory(level);
-
-        switch(level)
-        {
-            case TRIM_MEMORY_RUNNING_LOW:
-                MapManager.trim();
-                break;
-        }
-
-    }
-
     public void onDestroy()
     {
         super.onDestroy();
+
+        /**
+         * Check if the MapManager isn't null, if so then set it to null.
+         * */
+        if(spottingManager != null)
+        {
+            spottingManager = null;
+        }
 
         /**
          * Check if the MapManager isn't null, if so then destroy it and set it to null.

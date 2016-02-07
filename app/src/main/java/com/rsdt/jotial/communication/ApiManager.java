@@ -110,7 +110,7 @@ public class ApiManager {
      * */
     public void process(ArrayList<ApiResult> results)
     {
-        new ResultProcessingTask().execute(results.toArray(new ApiResult[results.size()]));
+        new ResultProcessingTask(ORIGIN_PROCESS).execute(results.toArray(new ApiResult[results.size()]));
         Log.i("ApiManager", "ApiTask.onPostExecute() - started running ResultProcessingTask on results");
         Log.i("ApiManager", "ApiTask.onPostExecute() - completed " + results.size() + " tasks");
     }
@@ -120,7 +120,6 @@ public class ApiManager {
      * @version 1.0
      * @since 19-10-2015
      * Class that preforms ApiRequests async.
-     * TODO: Make response code check.
      */
     protected class ApiTask extends AsyncTask<ApiRequest, Integer, ArrayList<ApiResult>> {
 
@@ -230,7 +229,9 @@ public class ApiManager {
              * */
             JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_APIMANAGER_FETCHING_COMPLETED, "ApiManager", "Fetching completed."));
 
-            process(results);
+            new ResultProcessingTask(ORIGIN_PREFORM).execute(results.toArray(new ApiResult[results.size()]));
+            Log.i("ApiManager", "ApiTask.onPostExecute() - started running ResultProcessingTask on results");
+            Log.i("ApiManager", "ApiTask.onPostExecute() - completed " + results.size() + " tasks");
         }
     }
 
@@ -241,6 +242,25 @@ public class ApiManager {
      * Class that processes the ApiResults internally.
      */
     protected class ResultProcessingTask extends AsyncTask<ApiResult, Integer, ArrayList<ApiResult>> {
+
+        /**
+         *
+         * */
+        public ResultProcessingTask() {
+            this.origin = ORIGIN_PREFORM;
+        }
+
+        /**
+         *
+         * */
+        public ResultProcessingTask(String origin) {
+            this.origin = origin;
+        }
+
+        /**
+         * Value that indicates the origin of the invoke.
+         * */
+        private String origin;
 
         @Override
         protected ArrayList<ApiResult> doInBackground(ApiResult... params) {
@@ -290,7 +310,12 @@ public class ApiManager {
                                      * If so add the ApiResult.
                                      * */
                                     entry.getValue().buffer.add(currentResult);
+                                    entry.getValue().shouldInvoke = true;
                                     handled = true;
+                                }
+                                else
+                                {
+
                                 }
                             }
                             else
@@ -299,6 +324,7 @@ public class ApiManager {
                                  * If so add the ApiResult.
                                  * */
                                 entry.getValue().buffer.add(currentResult);
+                                entry.getValue().shouldInvoke = true;
                                 handled = true;
                             }
 
@@ -318,9 +344,9 @@ public class ApiManager {
             super.onPostExecute(apiResults);
             for(Map.Entry<OnApiTaskCompleteCallback, ListenerEncapsulation> entry : listeners.entrySet())
             {
-                if(entry.getKey() != null)
+                if(entry.getKey() != null && entry.getValue().shouldInvoke)
                 {
-                    entry.getValue().invokeListener(entry.getKey());
+                    entry.getValue().invokeListener(entry.getKey(), origin);
                     Log.i("ApiManager", "ResultProcessingTask.onPostExecute() - invoked listener " + entry.getKey().toString());
                 }
             }
@@ -360,21 +386,31 @@ public class ApiManager {
         private ArrayList<ApiResult> buffer = new ArrayList<>();
 
         /**
+         * Value indicating if the listener should be invoked.
+         * */
+        private boolean shouldInvoke = false;
+
+        /**
          * Method to invoke the listener within the ListenerEncapsulation.
          * */
-        public void invokeListener(OnApiTaskCompleteCallback listener)
+        public void invokeListener(OnApiTaskCompleteCallback listener, String origin)
         {
             if(!buffer.isEmpty())
             {
                 /**
                  * Invoke the listener.
                  * */
-                listener.onApiTaskCompleted(buffer);
+                listener.onApiTaskCompleted(buffer, origin);
 
                 /**
                  * The data has been posted, so clear the data, it no longer needed.
                  * */
                 buffer.clear();
+
+                /**
+                 * Listener should no longer be invoked.
+                 * */
+                shouldInvoke = false;
             }
         }
 
@@ -389,7 +425,7 @@ public class ApiManager {
          * Gets invoked when new a api task finished.
          * @param results The results of the api task.
          * */
-        void onApiTaskCompleted(ArrayList<ApiResult> results);
+        void onApiTaskCompleted(ArrayList<ApiResult> results, String origin);
     }
 
 
@@ -405,6 +441,19 @@ public class ApiManager {
      * */
     public static final boolean APITASK_USE_DELAY = true;
 
+    /**
+     * Defines a Tracker identifier for the completion of the fetching.
+     * */
     public static final String TRACKER_APIMANAGER_FETCHING_COMPLETED = "TRACKER_APIMANAGER_FETCHING_COMPLETED";
+
+    /**
+     * Defines the origin from the process() method.
+     * */
+    public static final String ORIGIN_PROCESS = "ORIGIN_PROCESS";
+
+    /**
+     * Defines the origin from the perform() method.
+     * */
+    public static final String ORIGIN_PREFORM = "ORIGIN_PREFORM";
 
 }

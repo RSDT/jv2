@@ -21,7 +21,7 @@ public class FotoOpdrachtInfo extends BaseInfo implements Parcelable {
      */
     protected FotoOpdrachtInfo(Parcel in) {
         super(in);
-        naam = in.readString();
+        foto_nr = in.readInt();
         info = in.readString();
         extra = in.readString();
         klaar = in.readByte() != 0;
@@ -30,7 +30,7 @@ public class FotoOpdrachtInfo extends BaseInfo implements Parcelable {
     /**
      * The name of the FotoOpdrachtInfo.
      */
-    public String naam;
+    public int foto_nr;
 
     /**
      * The info of the FotoOpdrachtInfo.
@@ -50,7 +50,7 @@ public class FotoOpdrachtInfo extends BaseInfo implements Parcelable {
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         super.writeToParcel(dest, flags);
-        dest.writeString(naam);
+        dest.writeInt(foto_nr);
         dest.writeString(info);
         dest.writeString(extra);
         dest.writeByte((byte) (klaar ? 1 : 0));

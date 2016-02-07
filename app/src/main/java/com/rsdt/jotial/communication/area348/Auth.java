@@ -181,7 +181,7 @@ public class Auth implements ApiManager.OnApiTaskCompleteCallback {
     }
 
     @Override
-    public void onApiTaskCompleted(ArrayList<ApiResult> results) {
+    public void onApiTaskCompleted(ArrayList<ApiResult> results, String origin) {
         /**
          * Allocate buffer outside the loop.
          * */

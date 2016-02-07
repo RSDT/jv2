@@ -50,7 +50,7 @@ public class UpdateService extends IntentService implements ApiManager.OnApiTask
     }
 
     @Override
-    public void onApiTaskCompleted(ArrayList<ApiResult> results) {
+    public void onApiTaskCompleted(ArrayList<ApiResult> results, String origin) {
 
         /**
          * Allocate a ApiResult as a buffer once.

@@ -96,7 +96,7 @@
         <item>3</item>
         <item>4</item>
     </string-array>
-    <string-array name="pref_account_iconData">
+    <string-array name="pref_account_icon_data">
         <item>0</item>
         <item>1</item>
         <item>2</item>
@@ -123,16 +123,59 @@
     -->
     <string name="pref_map_hunt_name_title">Huntnaam</string>
     <string name="pref_map_hunt_name_sum">Je naam zichtbaar op de map</string>
+
+    <string name="pref_map_visibility_dialog_title">Zichtbaarheid</string>
+    <string name="pref_map_visibility_title">Onderdelen</string>
+    <string name="pref_map_visibility_sum">Verander hier de zichtbaarheid van onderdelen</string>
+
+    <string-array name="pref_map_visibility_options">
+        <item>Hunters</item>
+        <item>Scouting Groepen</item>
+        <item>Foto Opdrachten</item>
+        <item></item>
+    </string-array>
+
+    <string-array name="pref_map_visibility_options_data">
+        <item>0</item>
+        <item>1</item>
+    </string-array>
+
+    <string-array name="pref_map_visibility_options_def">
+        <item>0</item>
+        <item>1</item>
+    </string-array>
     <!-- END CAT -->
 
-    <!-- START CAT FETCH -->
+    <!-- START CAT SYNC -->
 
     <string name="pref_cat_sync">Synchroniseren</string>
 
     <string name="pref_sync_smart_title">Smart Sync</string>
     <string name="pref_sync_smart_sum">Slimme manier om de gegevens te synchroniseren</string>
 
+    <string name="pref_sync_smart_options_title">Smart Options</string>
+    <string name="pref_sync_smart_options_sum">De opties om bij het synchroniseren</string>
+    <string name="pref_sync_smart_options_def">0</string>
+    <string-array name="pref_sync_smart_options">
+        <item>Synchroniseer alleen mijn deelgebied</item>
+        <item>Synchroniseer alle deelgebieden</item>
+        <item>2</item>
+    </string-array>
+    <string-array name="pref_sync_smart_options_data">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
+
     <!-- END CAT -->
 
+    <!-- START CAT SYNC -->
+
+    <string name="pref_cat_misc">Extra</string>
+
+    <string name="pref_misc_walking_speed_title">Loopsnelheid</string>
+    <string name="pref_misc_walking_speed_sum">De snelheid waarmee de vossen ongeveer lopen</string>
+
+    <!-- END CAT -->
 
 </resources>

@@ -75,7 +75,7 @@ public class VosMapBehaviour extends MapBehaviour {
 
                 view.findViewById(R.id.infoWindow_infoType).setBackgroundColor(MapManager.parse(associatedInfo.team, 255));
 
-                ((TextView) view.findViewById(R.id.infoWindow_naam)).setText(associatedInfo.team_naam);
+                ((TextView) view.findViewById(R.id.infoWindow_naam)).setText(associatedInfo.opmerking);
 
                 ((TextView) view.findViewById(R.id.infoWindow_dateTime_adres)).setText(associatedInfo.datetime);
 
