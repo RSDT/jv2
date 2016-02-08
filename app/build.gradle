@@ -26,5 +26,6 @@ dependencies {
     compile 'com.android.support:design:23.1.1'
     compile files('libs/gson-2.3.1.jar')
     compile 'com.google.android.gms:play-services:8.4.0'
-    compile 'com.google.maps.android:android-maps-utils:0.4+'
+    compile 'com.google.maps.android:android-maps-utils:0.4'
+
 }
