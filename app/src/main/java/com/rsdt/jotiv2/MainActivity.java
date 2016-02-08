@@ -20,6 +20,7 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.view.animation.RotateAnimation;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.android.internal.util.Predicate;
@@ -31,6 +32,8 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.rsdt.jotial.JotiApp;
 
 import com.rsdt.jotial.communication.area348.Auth;
+import com.rsdt.jotial.communication.area348.UserControl;
+import com.rsdt.jotial.data.structures.area348.receivables.UserInfo;
 import com.rsdt.jotial.mapping.area348.DataProcessingManager;
 import com.rsdt.jotial.mapping.area348.JotiInfoWindowAdapter;
 import com.rsdt.jotial.mapping.area348.MapManager;
@@ -56,11 +59,15 @@ public class MainActivity extends AppCompatActivity
      * */
     private SpottingManager spottingManager = new SpottingManager();
 
-
     /**
      * The FloatingActionButtonMenu of the app, for controlling and managing the FAB menu.
      * */
     private FloatingActionButtonMenu floatingActionButtonMenu = new FloatingActionButtonMenu();
+
+    /**
+     * The NavigationViewHeaderManager of the app, for updating the header info.
+     * */
+    private NavigationViewHeaderManager navigationViewHeaderManager = new NavigationViewHeaderManager();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -131,36 +138,12 @@ public class MainActivity extends AppCompatActivity
             mapManager.getBundleHelper().fromBundleAndBuffer(savedInstanceState);
         }
 
-        updateNavHeader();
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
     }
 
-    private void updateNavHeader()
-    {
-        /**
-         * Get the NavigaitionView.
-         * */
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-
-        /**
-         * Get the preferences.
-         * */
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(JotiApp.getContext());
-
-        /**
-         * Set the navigation name view to the current name.
-         * */
-        ((TextView)navigationView.getHeaderView(0).findViewById(R.id.nav_name)).setText(preferences.getString("pref_account_username", "Guest"));
-
-        /**
-         * Set the navigation rank view to the current rank.
-         * */
-        ((TextView)navigationView.getHeaderView(0).findViewById(R.id.nav_rank)).setText(preferences.getString("pref_account_rank", "Guest"));
-
-    }
 
     public void onSaveInstanceState(Bundle savedInstanceState) {
         mapManager.getBundleHelper().toBundle(savedInstanceState);
@@ -254,16 +237,6 @@ public class MainActivity extends AppCompatActivity
     public void onConditionMet(Tracker.TrackerMessage message) {
         switch (message.getIdentifier())
         {
-            case Auth.TRACKER_AUTH_REQUIRED:
-
-                if(!JotiApp.Auth.isAuthDialogActive())
-                {
-                    DialogFragment fragment = new JotiLoginDialogFragment();
-                    fragment.show(getFragmentManager(), "login");
-                    JotiApp.Auth.setAuthDialogActive(true);
-                }
-
-                break;
             case TRACKER_MAINACTIVITY_UI_NAV_SWITCH:
 
                 /**
@@ -277,13 +250,23 @@ public class MainActivity extends AppCompatActivity
                     spottingManager.endSpot();
                 }
                 break;
+            case Auth.TRACKER_AUTH_REQUIRED:
+
+                if(!JotiApp.Auth.isAuthDialogActive())
+                {
+                    DialogFragment fragment = new JotiLoginDialogFragment();
+                    fragment.show(getFragmentManager(), "login");
+                    JotiApp.Auth.setAuthDialogActive(true);
+                }
+                break;
             case Auth.TRACKER_AUTH_SUCCEEDED:
                 SnackbarControl.show(Snackbar.make(findViewById(R.id.content_layout), "Succesvol ingelogd.", Snackbar.LENGTH_SHORT));
 
                 /**
-                 * Update the navigation header, with the latest details.
+                 * Retrieve the new user info.
                  * */
-                updateNavHeader();
+                JotiApp.UserControl.retrieve();
+
                 break;
             case Auth.TRACKER_AUTH_FAILED_UNAUTHORIZED:
                 SnackbarControl.show(Snackbar.make(findViewById(R.id.content_layout), "Kon niet inloggen.", Snackbar.LENGTH_LONG).setAction("Opnieuw", new View.OnClickListener() {
@@ -293,6 +276,15 @@ public class MainActivity extends AppCompatActivity
                     }
                 }).setActionTextColor(Color.parseColor("#E91E63")));
                 break;
+            case UserControl.TRACKER_USERCONTROL_RETRIEVE_SUCCEEDED:
+                navigationViewHeaderManager.updateHeader();
+                break;
+            case UserControl.TRACKER_USERCONTROL_RETRIEVE_FAILED:
+
+                break;
+            case UserControl.TRACKER_USERCONTROL_AVATAR_RETRIEVED:
+                navigationViewHeaderManager.updateAvatar();
+                break;
             case TRACKER_MAINACTIVITY_PREFERENCE_REQUIRED:
                 SnackbarControl.show(Snackbar.make(findViewById(R.id.content_layout), "Zet de " + message.getDescripition() + " eigenschap bij settings.", Snackbar.LENGTH_LONG).setAction("Ga naar", new View.OnClickListener() {
                     @Override
@@ -301,6 +293,7 @@ public class MainActivity extends AppCompatActivity
                     }
                 }).setActionTextColor(Color.parseColor("#E91E63")));
                 break;
+
         }
     }
 
@@ -317,6 +310,49 @@ public class MainActivity extends AppCompatActivity
 
     }
 
+
+    private class NavigationViewHeaderManager
+    {
+
+        /**
+         * Updates the NavigationViewHeader.
+         * */
+        public void updateHeader()
+        {
+            /**
+             * Get the NavigaitionView.
+             * */
+            NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+
+            /**
+             * Get the latest UserInfo from the UserControl.
+             * */
+            UserInfo userInfo = JotiApp.UserControl.getUserInfo();
+
+            /**
+             * Set the navigation name view to the current name.
+             * */
+            ((TextView) navigationView.getHeaderView(0).findViewById(R.id.nav_name)).setText(userInfo.naam);
+
+            /**
+             * Set the navigation rank view to the current rank.
+             * */
+            ((TextView)navigationView.getHeaderView(0).findViewById(R.id.nav_rank)).setText(userInfo.rank());
+
+        }
+
+        public void updateAvatar()
+        {
+
+            /**
+             * Get the NavigaitionView.
+             * */
+            NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+
+            ((ImageView) navigationView.getHeaderView(0).findViewById(R.id.nav_avatar)).setImageDrawable(JotiApp.UserControl.getUserInfo().avatarDrawable);
+        }
+
+    }
 
     /**
      * Class that controls and maintains the FloatingActionButton menu.

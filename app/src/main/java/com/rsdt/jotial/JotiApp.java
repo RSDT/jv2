@@ -4,6 +4,7 @@ import android.app.Application;
 import android.content.Context;
 
 import com.rsdt.jotial.communication.area348.Auth;
+import com.rsdt.jotial.communication.area348.UserControl;
 import com.rsdt.jotiv2.Tracker;
 
 /**
@@ -28,6 +29,12 @@ public class JotiApp extends Application {
      * The Auth class for the App, it handles all auth procedures.
      * */
     public static Auth Auth = new Auth();
+
+    /**
+     * The UserControl class for the App, it retrieves and holds the user's info.
+     * */
+    public static UserControl UserControl = new UserControl();
+
 
     @Override
     public void onCreate() {

@@ -43,6 +43,7 @@ import com.rsdt.jotial.mapping.area348.behaviour.MapBehaviourManager;
 import com.rsdt.jotial.mapping.area348.behaviour.ScoutingGroepMapBehaviour;
 import com.rsdt.jotial.mapping.area348.behaviour.VosMapBehaviour;
 import com.rsdt.jotial.mapping.area348.behaviour.events.MapBehaviourEvent;
+import com.rsdt.jotial.mapping.area348.clustering.ScoutingGroepClusterManager;
 import com.rsdt.jotial.mapping.area348.clustering.ScoutingGroepInfoRenderer;
 import com.rsdt.jotial.mapping.area348.data.GraphicalMapData;
 import com.rsdt.jotial.mapping.area348.data.MapData;
@@ -139,7 +140,7 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
     /**
      * The cluster manager for the scouting groups.
      * */
-    private ClusterManager<ScoutingGroepInfo> scClusterManager;
+    private ScoutingGroepClusterManager scClusterManager;
 
     /**
      * The BundleHelper for the MapManager.
@@ -163,21 +164,6 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
         this.googleMap = googleMap;
 
         /**
-         * Check if there's a local buffer, if so apply it.
-         * */
-        if(this.bundleHelper.hasLocalBuffer())
-        {
-            bundleHelper.applyFromLocalBuffer();
-        }
-        else
-        {
-            /**
-             * This is the first create, so move the camera to the standard position.
-             * */
-            googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(new CameraPosition(RP_LAT_LNG, ZOOM, TILT, BEARING)));
-        }
-
-        /**
          * Register as listener to the ApiManager, with a filter that applies only to ScoutingGroep Data.
          * */
         apiManager.addListener(this, new Predicate<ApiResult>() {
@@ -197,7 +183,7 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
         /**
          * Initialize the ClusterManager.
          * */
-        scClusterManager = new ClusterManager<>(JotiApp.getContext(), googleMap);
+        scClusterManager = new ScoutingGroepClusterManager(JotiApp.getContext(), googleMap);
         scClusterManager.setRenderer(new ScoutingGroepInfoRenderer(JotiApp.getContext(), googleMap, scClusterManager));
         googleMap.setOnCameraChangeListener(scClusterManager);
         googleMap.setOnMarkerClickListener(scClusterManager);
@@ -206,6 +192,21 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
          * Setup special events, such as the special indicator circle on OnGetInfoWindow().
          * */
         specialEventHandler.initialize();
+
+        /**
+         * Check if there's a local buffer, if so apply it.
+         * */
+        if(this.bundleHelper.hasLocalBuffer())
+        {
+            bundleHelper.applyFromLocalBuffer();
+        }
+        else
+        {
+            /**
+             * This is the first create, so move the camera to the standard position.
+             * */
+            googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(new CameraPosition(RP_LAT_LNG, ZOOM, TILT, BEARING)));
+        }
 
     }
 
@@ -278,6 +279,7 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
         @Override
         protected void onPostExecute(ArrayList<ApiResult> apiResults) {
             super.onPostExecute(apiResults);
+
 
             /**
              * Process the results.
@@ -376,6 +378,11 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
              * */
             bundle.putParcelable("camera", googleMap.getCameraPosition());
 
+            /**
+             * Put the ScoutingGroep items in the bundle.
+             * */
+            bundle.putParcelableArrayList("sc", scClusterManager.getItems());
+
             MapBehaviour behaviour;
             String[] keywords = new String[mapBehaviourManager.size()];
             int count = 0;
@@ -430,6 +437,11 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
             state.cameraPosition =  bundle.getParcelable("camera");
 
             /**
+             * Get the scouting groep items out of the Bundle.
+             * */
+            state.scItems = bundle.getParcelableArrayList("sc");
+
+            /**
              * Get the keywords for the various MapData.
              * */
             String[] keywords = bundle.getStringArray("keywords");
@@ -458,6 +470,12 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
              * Move the camera's position to the old one.
              * */
             googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(state.cameraPosition));
+
+            /**
+             * Add items to the cluster manager, and cluster them.
+             * */
+            scClusterManager.addItems(state.scItems);
+            scClusterManager.cluster();
 
             /**
              * Allocate buffer outside loop.
@@ -490,7 +508,7 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                 }
                 mapBehaviourManager.put(entry.getKey(), behaviour);
             }
-            new MapStorageReadTask().execute(MapStorageReadTask.RESULT_SC);
+
         }
 
         @MainThread
@@ -531,6 +549,11 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
              * The camera position of state.
              * */
             CameraPosition cameraPosition;
+
+            /**
+             * The scouting groep items.
+             * */
+            ArrayList<ScoutingGroepInfo> scItems;
 
             /**
              * The map data of the state.
@@ -1076,7 +1099,6 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                 return Color.WHITE;
         }
     }
-
 
     /**
      * @author Dingenis Sieger Sinke
