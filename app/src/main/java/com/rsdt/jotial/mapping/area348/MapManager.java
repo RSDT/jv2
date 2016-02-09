@@ -717,7 +717,6 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                      * Add the circle to the map.
                      * */
                     indicationCircle = googleMap.addCircle(cOptions);
-
                 }
             });
         }
@@ -1142,7 +1141,6 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                     }
                 });
 
-
                 /**
                  * Setup the response code check, so that error can be reported.
                  * */
@@ -1417,7 +1415,6 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                 JotiApp.Auth.requireAuth();
             }
         }
-
 
         /**
          * Class that represents the state of sync.

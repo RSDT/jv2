@@ -41,20 +41,33 @@
             android:key="pref_map_hunt_name"
             android:summary="@string/pref_map_hunt_name_sum"/>
 
-        <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
-            android:title="Smart MapViewing" android:summary="Een slimme manier op onderdelen te laten zien"
-        android:layout_width="match_parent" android:layout_height="match_parent">
-            <MultiSelectListPreference
-                android:dialogTitle="@string/pref_map_visibility_dialog_title"
-                android:key="pref_map_visibility"
-                android:title="@string/pref_map_visibility_title"
-                android:summary="@string/pref_map_visibility_sum"
-                android:entries="@array/pref_map_visibility_options"
-                android:entryValues="@array/pref_map_visibility_options_data"
-                android:defaultValue="@array/pref_map_visibility_options_def"
-                />
-            </PreferenceScreen>
 
+        <CheckBoxPreference
+            android:title="@string/pref_map_smart_view_title"
+            android:summary="@string/pref_map_smart_view_sum"
+            android:key="pref_map_smart_view"
+            android:defaultValue="true"/>
+
+        <ListPreference
+            android:key="pref_map_smart_view_options"
+            android:title="@string/pref_map_smart_view_options_title"
+            android:summary="@string/pref_map_smart_view_options_sum"
+            android:entries="@array/pref_map_smart_view_options"
+            android:entryValues="@array/pref_map_smart_view_options_data"
+            android:dependency="pref_map_smart_view"
+            android:defaultValue="@string/pref_map_smart_view_options_def"
+            />
+
+        <MultiSelectListPreference
+            android:dialogTitle="@string/pref_map_visibility_dialog_title"
+            android:key="pref_map_visibility"
+            android:title="@string/pref_map_visibility_title"
+            android:summary="@string/pref_map_visibility_sum"
+            android:entries="@array/pref_map_visibility_options"
+            android:entryValues="@array/pref_map_visibility_options_data"
+            android:defaultValue="@array/pref_map_visibility_options_def"
+            android:dependency="pref_map_smart_view"
+            />
 
     </PreferenceCategory>
 
@@ -63,7 +76,8 @@
         <CheckBoxPreference
             android:title="@string/pref_sync_smart_title"
             android:key="pref_sync_smart"
-            android:summary="@string/pref_sync_smart_sum"/>
+            android:summary="@string/pref_sync_smart_sum"
+            android:defaultValue="true"/>
 
         <ListPreference
             android:title="@string/pref_sync_smart_options_title"

@@ -1,9 +1,7 @@
 package com.rsdt.jotial.communication.area348;
 
 import android.content.SharedPreferences;
-import android.graphics.drawable.Drawable;
-import android.os.AsyncTask;
-import android.os.Bundle;
+
 import android.preference.PreferenceManager;
 
 import com.android.internal.util.Predicate;
