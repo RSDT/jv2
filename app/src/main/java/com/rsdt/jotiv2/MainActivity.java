@@ -2,7 +2,9 @@ package com.rsdt.jotiv2;
 
 import android.app.DialogFragment;
 import android.app.FragmentTransaction;
+import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.design.widget.CoordinatorLayout;
@@ -119,7 +121,7 @@ public class MainActivity extends AppCompatActivity
         /**
          * Initialize the NavigationViewHeaderManager.
          * */
-        navigationViewHeaderManager.initialize();
+        navigationViewHeaderManager.initialize(savedInstanceState);
 
         /**
          * Check if the savedInstance is null, if so this is the first run.
@@ -153,9 +155,13 @@ public class MainActivity extends AppCompatActivity
     }
 
 
+    /**
+     * Save data.
+     * */
     public void onSaveInstanceState(Bundle savedInstanceState) {
         mapManager.getBundleHelper().toBundle(savedInstanceState);
         navigationManager.saveInstanceState(savedInstanceState);
+        navigationViewHeaderManager.saveInstanceState(savedInstanceState);
     }
 
     @Override
@@ -336,10 +342,26 @@ public class MainActivity extends AppCompatActivity
         Drawable avatar;
 
 
-        public void initialize()
+        public void initialize(Bundle savedInstanceState)
         {
             JotiApp.UserControl.addInfoListener(this);
             JotiApp.UserControl.addAvatarListener(this);
+
+            if(savedInstanceState != null)
+            {
+                info = savedInstanceState.getParcelable("user");
+                avatar = new BitmapDrawable((Bitmap)savedInstanceState.getParcelable("avatar"));
+
+                /**
+                 * Update the header, with the saved data.
+                 * */
+                updateHeader();
+
+                /**
+                 * Update the avatar, with the saved data.
+                 * */
+                updateAvatar();
+            }
         }
 
         /**
@@ -387,6 +409,15 @@ public class MainActivity extends AppCompatActivity
             this.info = info;
         }
 
+        /**
+         * Save the state.
+         * */
+        public void saveInstanceState(Bundle state)
+        {
+            state.putParcelable("user", info);
+            state.putParcelable("avatar", ((BitmapDrawable)avatar).getBitmap());
+        }
+
         public void destroy()
         {
             JotiApp.UserControl.removeInfoListener(this);
@@ -405,9 +436,7 @@ public class MainActivity extends AppCompatActivity
          * Value indicating if the menu is visible or not.
          * */
         public boolean visible = false;
-
-        public boolean bar = false;
-
+        
         /**
          * Initializes the menu.
          * */
@@ -520,18 +549,9 @@ public class MainActivity extends AppCompatActivity
          * */
         public void show()
         {
-            if(bar)
-            {
-                repositionFab((FloatingActionButton)findViewById(R.id.fab_sync), FAB_SHOW_WITH_BAR, 1);
-                repositionFab((FloatingActionButton) findViewById(R.id.fab_search), FAB_SHOW_WITH_BAR, 2);
-                repositionFab((FloatingActionButton)findViewById(R.id.fab_follow), FAB_SHOW_WITH_BAR, 3);
-            }
-            else
-            {
-                repositionFab((FloatingActionButton)findViewById(R.id.fab_sync), FAB_SHOW, 1);
-                repositionFab((FloatingActionButton) findViewById(R.id.fab_search), FAB_SHOW, 2);
-                repositionFab((FloatingActionButton)findViewById(R.id.fab_follow), FAB_SHOW, 3);
-            }
+            repositionFab((FloatingActionButton)findViewById(R.id.fab_sync), FAB_SHOW, 1);
+            repositionFab((FloatingActionButton) findViewById(R.id.fab_search), FAB_SHOW, 2);
+            repositionFab((FloatingActionButton)findViewById(R.id.fab_follow), FAB_SHOW, 3);
         }
 
         /**
@@ -599,7 +619,7 @@ public class MainActivity extends AppCompatActivity
 
         @Override
         public void onSnackbarShow(Snackbar snackbar) {
-            hide();
+
         }
 
         @Override
@@ -637,11 +657,6 @@ public class MainActivity extends AppCompatActivity
          * Defines the action hide.
          * */
         public static final String FAB_HIDE = "FAB_HIDE";
-
-        public static final String FAB_SHOW_WITH_BAR = "FAB_SHOW_WITH_BAR";
-
-        public static final String FAB_HIDE_WITH_BAR = "FAB_HIDE_WITH_BAR";
-
 
     }
 
@@ -900,6 +915,9 @@ public class MainActivity extends AppCompatActivity
 
     }
 
+    /**
+     * Destroys the activity.
+     * */
     public void onDestroy()
     {
         super.onDestroy();
