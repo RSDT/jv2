@@ -2,10 +2,9 @@ package com.rsdt.jotiv2;
 
 import android.app.DialogFragment;
 import android.app.FragmentTransaction;
-import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.view.View;
@@ -112,6 +111,11 @@ public class MainActivity extends AppCompatActivity
          * Initialize the FloatingActionButtonMenu.
          * */
         floatingActionButtonMenu.initialize();
+
+        /**
+         * Initialize the NavigationViewHeaderManager.
+         * */
+        navigationViewHeaderManager.initialize();
 
         /**
          * Check if the savedInstance is null, if so this is the first run.
@@ -276,13 +280,16 @@ public class MainActivity extends AppCompatActivity
                     }
                 }).setActionTextColor(Color.parseColor("#E91E63")));
                 break;
-            case UserControl.TRACKER_USERCONTROL_RETRIEVE_SUCCEEDED:
+            case UserControl.TRACKER_USERCONTROL_USERINFO_RETRIEVE_SUCCEEDED:
                 navigationViewHeaderManager.updateHeader();
                 break;
-            case UserControl.TRACKER_USERCONTROL_RETRIEVE_FAILED:
+            case UserControl.TRACKER_USERCONTROL_USERINFO_RETRIEVE_FAILED:
 
                 break;
-            case UserControl.TRACKER_USERCONTROL_AVATAR_RETRIEVED:
+            case UserControl.TRACKER_USERCONTROL_AVATAR_RETRIEVE_SUCCEEDED:
+                navigationViewHeaderManager.updateAvatar();
+                break;
+            case UserControl.TRACKER_USERCONTROL_AVATAR_RETRIEVE_FAILED:
                 navigationViewHeaderManager.updateAvatar();
                 break;
             case TRACKER_MAINACTIVITY_PREFERENCE_REQUIRED:
@@ -311,8 +318,25 @@ public class MainActivity extends AppCompatActivity
     }
 
 
-    private class NavigationViewHeaderManager
+    private class NavigationViewHeaderManager implements UserControl.OnUserInfoRetrievedCallback, UserControl.OnUserAvatarRetrievedCallback
     {
+
+        /**
+         * The info of the user.
+         * */
+        UserInfo info;
+
+        /**
+         * The drawable of the user.
+         * */
+        Drawable avatar;
+
+
+        public void initialize()
+        {
+            JotiApp.UserControl.addInfoListener(this);
+            JotiApp.UserControl.addAvatarListener(this);
+        }
 
         /**
          * Updates the NavigationViewHeader.
@@ -325,31 +349,44 @@ public class MainActivity extends AppCompatActivity
             NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
 
             /**
-             * Get the latest UserInfo from the UserControl.
-             * */
-            UserInfo userInfo = JotiApp.UserControl.getUserInfo();
-
-            /**
              * Set the navigation name view to the current name.
              * */
-            ((TextView) navigationView.getHeaderView(0).findViewById(R.id.nav_name)).setText(userInfo.naam);
+            ((TextView) navigationView.getHeaderView(0).findViewById(R.id.nav_name)).setText(info.naam);
 
             /**
              * Set the navigation rank view to the current rank.
              * */
-            ((TextView)navigationView.getHeaderView(0).findViewById(R.id.nav_rank)).setText(userInfo.rank());
+            ((TextView)navigationView.getHeaderView(0).findViewById(R.id.nav_rank)).setText(info.rank());
 
         }
 
         public void updateAvatar()
         {
-
             /**
              * Get the NavigaitionView.
              * */
             NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
 
-            ((ImageView) navigationView.getHeaderView(0).findViewById(R.id.nav_avatar)).setImageDrawable(JotiApp.UserControl.getUserInfo().avatarDrawable);
+            /**
+             * Set the avatar.
+             * */
+            ((ImageView) navigationView.getHeaderView(0).findViewById(R.id.nav_avatar)).setImageDrawable(avatar);
+        }
+
+        @Override
+        public void onUserAvatarRetrieved(Drawable avatar) {
+            this.avatar = avatar;
+        }
+
+        @Override
+        public void onUserInfoRetrieved(UserInfo info) {
+            this.info = info;
+        }
+
+        public void destroy()
+        {
+            JotiApp.UserControl.removeInfoListener(this);
+            JotiApp.UserControl.removeAvatarListener(this);
         }
 
     }
@@ -891,6 +928,15 @@ public class MainActivity extends AppCompatActivity
         }
 
         /**
+         * Check if the NavigationViewHeaderManager isn't null, if so then destroy it and set it to null.
+         * */
+        if(navigationViewHeaderManager != null)
+        {
+            navigationViewHeaderManager.destroy();
+            navigationViewHeaderManager = null;
+        }
+
+        /**
          * Check if the FloatingActionButtonMenu isn't null, if so then destroy it and set it to null.
          * */
         if(floatingActionButtonMenu != null)
@@ -904,7 +950,6 @@ public class MainActivity extends AppCompatActivity
          * */
         JotiApp.MainTracker.unsubscribe(this);
     }
-
 
     /**
      * Defines a tracker identifier for the completion of the location selection.

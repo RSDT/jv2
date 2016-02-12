@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -93,14 +94,27 @@ public class ApiManager {
      * */
     public void preform()
     {
-        if(!queued.isEmpty())
-        {
+        if(!queued.isEmpty()) {
+            /**
+             * Create, store and exectue the StaticApiTask.
+             * */
+            ApiTask task = new ApiTask();
+            task.execute(queued.toArray(new ApiRequest[queued.size()]));
+            tasks.add(task);
+
+            /**
+             * Add all the queued to the pending list.
+             * */
             pending.addAll(queued);
+
+            /**
+             * Clear the queued list, since now they are pending.
+             * */
             queued.clear();
 
-            ApiTask task = new ApiTask();
-            task.execute(pending.toArray(new ApiRequest[pending.size()]));
-            tasks.add(task);
+            /**
+             * Log the situation.
+             * */
             Log.i("ApiManager", "preform() - preforming  " + pending.size() + " ApiRequests");
         }
     }
@@ -190,6 +204,11 @@ public class ApiManager {
                         }
 
                         /**
+                         * Set the execution data to now.
+                         * */
+                        currentRequest.setExecutionDate(new Date());
+
+                        /**
                          * Disconnect.
                          * */
                         connection.disconnect();
@@ -218,7 +237,6 @@ public class ApiManager {
 
             /**
              * Clear the pending and completed list, the completed list only contains one ApiTask's results.
-             * TODO: Implement completed to file method? To maintain data.
              * */
             pending.clear();
             completed.clear();

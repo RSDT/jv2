@@ -46,12 +46,26 @@ public class StaticApiManger extends ApiManager {
     @Override
     public void preform() {
         if(!queued.isEmpty()) {
+            /**
+             * Create, store and exectue the StaticApiTask.
+             * */
+            StaticApiTask task = new StaticApiTask();
+            task.execute(queued.toArray(new ApiRequest[queued.size()]));
+            tasks.add(task);
+
+            /**
+             * Add all the queued to the pending list.
+             * */
             pending.addAll(queued);
+
+            /**
+             * Clear the queued list, since now they are pending.
+             * */
             queued.clear();
 
-            StaticApiTask task = new StaticApiTask();
-            task.execute(pending.toArray(new ApiRequest[pending.size()]));
-            tasks.add(task);
+            /**
+             * Log the situation.
+             * */
             Log.i("ApiManager", "preform() - preforming  " + pending.size() + " ApiRequests");
         }
     }

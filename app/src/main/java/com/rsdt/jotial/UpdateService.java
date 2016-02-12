@@ -7,8 +7,7 @@ import com.rsdt.jotial.communication.ApiManager;
 import com.rsdt.jotial.communication.ApiRequest;
 import com.rsdt.jotial.communication.ApiResult;
 import com.rsdt.jotial.communication.LinkBuilder;
-import com.rsdt.jotial.communication.area348.Area348API;
-import com.rsdt.jotial.mapping.area348.behaviour.MapBehaviour;
+import com.rsdt.jotial.communication.area348.Area348;
 import com.rsdt.jotial.mapping.area348.behaviour.VosMapBehaviour;
 import com.rsdt.jotial.mapping.area348.data.MapData;
 
@@ -42,7 +41,7 @@ public class UpdateService extends IntentService implements ApiManager.OnApiTask
         switch (intent.getAction())
         {
             case UPDATE_SERVICE_ACTIONS_REFRESH:
-                LinkBuilder.setRoot(Area348API.root);
+                LinkBuilder.setRoot(Area348.API_V1_ROOT);
                 apiManager.queue(new ApiRequest(LinkBuilder.build(new String[]{"vos", "a", "all"})));
                 apiManager.preform();
                 break;
@@ -73,7 +72,7 @@ public class UpdateService extends IntentService implements ApiManager.OnApiTask
              * Check if the ApiResult is for us, by checking the host of the URL.
              * NOTE: Does not work?
              * */
-            if(currentResult.getRequest().getUrl().getHost().matches(Area348API.root))
+            if(currentResult.getRequest().getUrl().getHost().matches(Area348.API_V1_ROOT))
             {
 
             }

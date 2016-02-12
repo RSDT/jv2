@@ -2,7 +2,10 @@ package com.rsdt.jotial.communication.area348;
 
 import android.content.SharedPreferences;
 
+import android.graphics.drawable.Drawable;
+import android.os.AsyncTask;
 import android.preference.PreferenceManager;
+import android.util.Log;
 
 import com.android.internal.util.Predicate;
 
@@ -21,6 +24,8 @@ import com.rsdt.jotial.mapping.area348.MapManager;
 
 import com.rsdt.jotiv2.Tracker;
 
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 
 /**
@@ -32,17 +37,39 @@ import java.util.ArrayList;
 public class UserControl implements ApiManager.OnApiTaskCompleteCallback {
 
     /**
-     * The UserInfo of the UserControl.
+     * List of user info retrieved callbacks.
      * */
-    private UserInfo userInfo;
+    private ArrayList<OnUserInfoRetrievedCallback> onUserInfoRetrievedCallbacks = new ArrayList<>();
 
     /**
-     * Gets the current UserInfo.
+     * List of avatar retrieved callbacks.
      * */
-    public UserInfo getUserInfo() {
-        return userInfo;
+    private ArrayList<OnUserAvatarRetrievedCallback> onUserAvatarRetrievedCallbacks = new ArrayList<>();
+
+
+    public void addInfoListener(OnUserInfoRetrievedCallback callback)
+    {
+        onUserInfoRetrievedCallbacks.add(callback);
     }
 
+    public void removeInfoListener(OnUserInfoRetrievedCallback callback)
+    {
+        onUserInfoRetrievedCallbacks.remove(callback);
+    }
+
+    public void addAvatarListener(OnUserAvatarRetrievedCallback callback)
+    {
+        onUserAvatarRetrievedCallbacks.add(callback);
+    }
+
+    public void removeAvatarListener(OnUserAvatarRetrievedCallback callback)
+    {
+        onUserAvatarRetrievedCallbacks.remove(callback);
+    }
+
+    /**
+     * Initializes a new instance of UserControl.
+     * */
     public UserControl()
     {
         MapManager.getApiManager().addListener(this, new Predicate<ApiResult>() {
@@ -55,49 +82,12 @@ public class UserControl implements ApiManager.OnApiTaskCompleteCallback {
 
     @Override
     public void onApiTaskCompleted(ArrayList<ApiResult> results, String origin) {
-
-        /**
-         * Allocate result buffer outside loop.
-         * */
-        ApiResult currentResult;
-
-        /**
-         * Loop through each result.
-         * */
-        for(int i = 0; i < results.size(); i++)
-        {
-            currentResult = results.get(i);
-
-            if(currentResult.getResponseCode() == 200)
-            {
-                userInfo = new Gson().fromJson(currentResult.getData(), UserInfo.class);
-
-                new Thread(new DownloadAvatarTask()).run();
-
-                SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(JotiApp.getContext()).edit();
-
-                /**
-                 * Put the rank into the Preferences.
-                 * */
-                editor.putString("pref_account_rank", userInfo.rank());
-
-                /**
-                 * Apply the changes.
-                 * */
-                editor.apply();
-
-                JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_USERCONTROL_RETRIEVE_SUCCEEDED, "UserControl", "Successfully retrieved the user info"));
-            }
-            else
-            {
-                JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_USERCONTROL_RETRIEVE_FAILED, "UserControl", "Failed to retrieve user info, code " + currentResult.getResponseCode()));
-            }
-
-        }
-
+        new UserInfoProcessingTask().execute(results.toArray(new ApiResult[results.size()]));
     }
 
-
+    /**
+     * Retrieves the UserInfo, from the server.
+     * */
     public void retrieve()
     {
         String key = JotiApp.Auth.getKey();
@@ -113,24 +103,242 @@ public class UserControl implements ApiManager.OnApiTaskCompleteCallback {
         }
     }
 
-
-    public class DownloadAvatarTask implements Runnable {
+    /**
+     * @author Dingenis Sieger Sinke
+     * @version 1.0
+     * @since 8-2-2016
+     * Class for processing the users info.
+     */
+    private class UserInfoProcessingTask extends AsyncTask<ApiResult, Integer, UserInfo>
+    {
 
         @Override
-        public void run() {
+        protected UserInfo doInBackground(ApiResult... params) {
+
 
             /**
-             * Gets the avatar.
+             * Allocate buffer to hold the result UserInfo.
              * */
-            userInfo.avatarDrawable = UserInfo.getAvatar(userInfo.avatar);
-            JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_USERCONTROL_AVATAR_RETRIEVED, "DownloadAvatarTask", "The avatar has been retrieved"));
+            UserInfo buffer;
+
+            /**
+             * Allocate result buffer outside loop.
+             * */
+            ApiResult finalResult = null;
+
+            /**
+             * Check if the length of the params is more than one.
+             * If so we need to pick the latest one.
+             * */
+            if(params.length > 1)
+            {
+                /**
+                 * Set the current result to the first one of the array.
+                 * */
+                finalResult = params[1];
+
+                /**
+                 * Loop through each one except the first one.
+                 * */
+                for(int x = 1; x < params.length; x++)
+                {
+                    /**
+                     * Check the current x result is executed later than the first one, if so
+                     * set the current result to the x result.
+                     * */
+                    if(params[x].getRequest().getExecutionDate().after(finalResult.getRequest().getExecutionDate()) && params[x].getResponseCode() == 200)
+                    {
+                        finalResult = params[x];
+                    }
+                }
+            }
+            else
+            {
+                if(params[0].getResponseCode() == 200)
+                {
+                    /**
+                     * Set the current result to the first one of the array.
+                     * */
+                    finalResult = params[0];
+                }
+            }
+
+            if(finalResult != null)
+            {
+                /**
+                 * Deserialize the UserInfo.
+                 * */
+                buffer = new Gson().fromJson(finalResult.getData(), UserInfo.class);
+
+                /**
+                 * Get the Preferences editor.
+                 * */
+                SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(JotiApp.getContext()).edit();
+
+                /**
+                 * Put the rank into the Preferences.
+                 * */
+                editor.putString("pref_account_rank", buffer.rank());
+
+                /**
+                 * Apply the changes.
+                 * */
+                editor.apply();
+
+                return buffer;
+            }
+            return null;
+        }
+
+
+        @Override
+        protected void onPostExecute(UserInfo info) {
+            super.onPostExecute(info);
+
+            if(info != null)
+            {
+
+                /**
+                 * Allocate callback as buffer.
+                 * */
+                OnUserInfoRetrievedCallback callback;
+
+                /**
+                 * Loop through each callback.
+                 * */
+                for(int i = 0; i < onUserInfoRetrievedCallbacks.size(); i++)
+                {
+                    /**
+                     * Set the callback.
+                     * */
+                    callback = onUserInfoRetrievedCallbacks.get(i);
+
+                    /**
+                     * Check if it isn't null, if so invoke it.
+                     * */
+                    if(callback != null)
+                    {
+                        callback.onUserInfoRetrieved(info);
+                    }
+                }
+
+                /**
+                 * Download the info's drawable avatar in the background.
+                 * */
+                new DownloadAvatarTask().execute(info);
+
+                /**
+                 * Report that the users info has been retrieved.
+                 * */
+                JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_USERCONTROL_USERINFO_RETRIEVE_SUCCEEDED, "UserControl", "Successfully retrieved the user info"));
+            }
+            else
+            {
+                JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_USERCONTROL_USERINFO_RETRIEVE_FAILED, "UserControl", "Failed to retrieve user info"));
+            }
+        }
+
+    }
+
+    /**
+     * @author Dingenis Sieger Sinke
+     * @version 1.0
+     * @since 8-2-2016
+     * Class for downloading the avatar of the user.
+     */
+    private class DownloadAvatarTask extends AsyncTask<UserInfo, Integer, Drawable>
+    {
+
+        @Override
+        protected Drawable doInBackground(UserInfo... params) {
+
+            /**
+             * Allocate buffer, outside the loop.
+             * */
+            UserInfo info;
+
+            /**
+             * Loop through each info.
+             * */
+            for(int i = 0; i < params.length; i++)
+            {
+                info = params[i];
+
+                try
+                {
+                    InputStream is = (InputStream)new URL(Area348.SITE_2016_ROOT + "/img/avatar/" + info.avatar).getContent();
+                    return Drawable.createFromStream(is, info.avatar);
+                }
+                catch (Exception e)
+                {
+                    Log.e("UserInfo", e.toString(), e);
+                }
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Drawable drawable) {
+            super.onPostExecute(drawable);
+
+            if(drawable != null)
+            {
+                /**
+                 * Allocate callback as buffer.
+                 * */
+                OnUserAvatarRetrievedCallback callback;
+
+                /**
+                 * Loop trough each callback.
+                 * */
+                for(int i = 0; i < onUserAvatarRetrievedCallbacks.size(); i++)
+                {
+                    /**
+                     * Set the callback.
+                     * */
+                    callback = onUserAvatarRetrievedCallbacks.get(i);
+
+                    /**
+                     * Check if the callback isn't null, if so invoke it.
+                     * */
+                    if(callback != null)
+                    {
+                        callback.onUserAvatarRetrieved(drawable);
+                    }
+                }
+                JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_USERCONTROL_AVATAR_RETRIEVE_SUCCEEDED, "DownloadAvatarTask", "The avatar has successfully been retrieved."));
+            }
+            else
+            {
+                JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_USERCONTROL_AVATAR_RETRIEVE_FAILED, "DownloadAvatarTask", "Failed to retrieve avatar."));
+            }
+
         }
     }
 
-    public static final String TRACKER_USERCONTROL_RETRIEVE_SUCCEEDED = "TRACKER_USERCONTROL_RETRIEVE_SUCCEEDED";
 
-    public static final String TRACKER_USERCONTROL_RETRIEVE_FAILED = "TRACKER_USERCONTROL_RETRIEVE_FAILED";
+    /**
+     * Defines a callback for when a UserInfo is retrieved.
+     * */
+    public interface OnUserInfoRetrievedCallback
+    {
+        void onUserInfoRetrieved(UserInfo info);
+    }
 
-    public static final String TRACKER_USERCONTROL_AVATAR_RETRIEVED = "TRACKER_USERCONTROL_AVATAR_RETRIEVED";
+    /**
+     * Defines a callback for when a user's avatar is retrieved.
+     * */
+    public interface OnUserAvatarRetrievedCallback
+    {
+        void onUserAvatarRetrieved(Drawable avatar);
+    }
+
+    public static final String TRACKER_USERCONTROL_AVATAR_RETRIEVE_SUCCEEDED = "TRACKER_USERCONTROL_AVATAR_RETRIEVE_SUCCEEDED";
+
+    public static final String TRACKER_USERCONTROL_AVATAR_RETRIEVE_FAILED = "TRACKER_USERCONTROL_AVATAR_RETRIEVE_FAILED";
+
+    public static final String TRACKER_USERCONTROL_USERINFO_RETRIEVE_SUCCEEDED = "TRACKER_USERCONTROL_USERINFO_RETRIEVE_SUCCEEDED";
+
+    public static final String TRACKER_USERCONTROL_USERINFO_RETRIEVE_FAILED = "TRACKER_USERCONTROL_USERINFO_RETRIEVE_FAILED";
 
 }

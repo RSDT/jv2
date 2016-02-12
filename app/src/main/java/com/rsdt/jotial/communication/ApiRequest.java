@@ -1,6 +1,7 @@
 package com.rsdt.jotial.communication;
 
 import java.net.URL;
+import java.util.Date;
 
 /**
  * @author Dingenis Sieger Sinke
@@ -17,7 +18,7 @@ public class ApiRequest {
     public ApiRequest(URL url)
     {
         this.url = url;
-        this.type = GET;
+        this.method = GET;
     }
 
     /**
@@ -32,11 +33,11 @@ public class ApiRequest {
 
         if(data != null && !data.isEmpty())
         {
-            this.type = POST;
+            this.method = POST;
         }
         else
         {
-            this.type = GET;
+            this.method = GET;
         }
     }
 
@@ -51,10 +52,14 @@ public class ApiRequest {
     private String data;
 
     /**
-     * The type of the request, post or get.
+     * The method of the request, post or get.
      * */
-    private String type;
+    private String method;
 
+    /**
+     * The date of execution.
+     * */
+    private Date executionDate;
 
     /**
      * Gets the url of the ApiRequest.
@@ -71,10 +76,24 @@ public class ApiRequest {
     }
 
     /**
-     * Gets the type of the request.
+     * Gets the method of the request.
      * */
-    public String getType() {
-        return type;
+    public String getMethod() {
+        return method;
+    }
+
+    /**
+     * Gets the data of execution.
+     * */
+    public Date getExecutionDate() {
+        return executionDate;
+    }
+
+    /**
+     * Set the execution date for the ApiRequest.
+     * */
+    public void setExecutionDate(Date executionDate) {
+        this.executionDate = executionDate;
     }
 
     public static String POST = "POST";

@@ -1,14 +1,7 @@
 package com.rsdt.jotial.data.structures.area348.receivables;
 
-import android.graphics.drawable.Drawable;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.util.Log;
-
-import com.rsdt.jotial.communication.area348.Area348API;
-
-import java.io.InputStream;
-import java.net.URL;
 
 /**
  * @author Dingenis Sieger Sinke
@@ -25,13 +18,15 @@ public class UserInfo  implements Parcelable {
 
     public String naam;
 
+    public String achternaam;
+
     public String email;
 
     public String sinds;
 
     public String last;
 
-    public String actief;
+    public int actief;
 
     public int toeganslvl;
 
@@ -39,16 +34,15 @@ public class UserInfo  implements Parcelable {
 
     public String rank() { return IntLvlToStringRank(toeganslvl); }
 
-    public Drawable avatarDrawable;
-
     protected UserInfo(Parcel in) {
         id = in.readInt();
         gebruikersnaam = in.readString();
         naam = in.readString();
+        achternaam = in.readString();
         email = in.readString();
         sinds = in.readString();
         last = in.readString();
-        actief = in.readString();
+        actief = in.readInt();
         toeganslvl = in.readInt();
         avatar = in.readString();
     }
@@ -63,10 +57,11 @@ public class UserInfo  implements Parcelable {
         dest.writeInt(id);
         dest.writeString(gebruikersnaam);
         dest.writeString(naam);
+        dest.writeString(achternaam);
         dest.writeString(email);
         dest.writeString(sinds);
         dest.writeString(last);
-        dest.writeString(actief);
+        dest.writeInt(actief);
         dest.writeInt(toeganslvl);
         dest.writeString(avatar);
     }
@@ -103,20 +98,6 @@ public class UserInfo  implements Parcelable {
                 break;
         }
         return rank;
-    }
-
-    public static Drawable getAvatar(String avatar)
-    {
-        try
-        {
-            InputStream is = (InputStream)new URL(Area348API.rootV2 + "/img/avata/" + avatar).getContent();
-            return Drawable.createFromStream(is, avatar);
-        }
-        catch(Exception e)
-        {
-            Log.e("UserInfo", e.toString(), e);
-        }
-        return null;
     }
 
     public static final Creator<UserInfo> CREATOR = new Creator<UserInfo>() {

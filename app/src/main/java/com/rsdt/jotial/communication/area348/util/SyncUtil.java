@@ -13,7 +13,7 @@ import com.rsdt.jotial.communication.ApiManager;
 import com.rsdt.jotial.communication.ApiRequest;
 import com.rsdt.jotial.communication.ApiResult;
 import com.rsdt.jotial.communication.LinkBuilder;
-import com.rsdt.jotial.communication.area348.Area348API;
+import com.rsdt.jotial.communication.area348.Area348;
 import com.rsdt.jotial.mapping.area348.MapManager;
 
 import java.util.ArrayList;
@@ -62,7 +62,7 @@ public class SyncUtil {
                 /**
                  * Queue in and preform the request with the hunter's location data.
                  * */
-                LinkBuilder.setRoot(Area348API.rootV2);
+                LinkBuilder.setRoot(Area348.API_V2_ROOT);
                 MapManager.getApiManager().queue(new ApiRequest(LinkBuilder.build(new String[]{"hunter"}), new Gson().toJson(object)));
                 MapManager.getApiManager().addListener(new ApiManager.OnApiTaskCompleteCallback() {
                     @Override
@@ -130,7 +130,7 @@ public class SyncUtil {
                 /**
                  * Queue in and preform the request with the hunter's location data.
                  * */
-                LinkBuilder.setRoot(Area348API.rootV2);
+                LinkBuilder.setRoot(Area348.API_V2_ROOT);
                 MapManager.getApiManager().queue(new ApiRequest(LinkBuilder.build(new String[]{"vos"}), new Gson().toJson(object)));
                 MapManager.getApiManager().addListener(new ApiManager.OnApiTaskCompleteCallback() {
                     @Override

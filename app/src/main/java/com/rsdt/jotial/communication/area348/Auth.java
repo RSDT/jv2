@@ -175,7 +175,7 @@ public class Auth implements ApiManager.OnApiTaskCompleteCallback {
         /**
          * Queue in and preform a ApiRequest, with the login data to the login page.
          * */
-        LinkBuilder.setRoot(Area348API.rootV2);
+        LinkBuilder.setRoot(Area348.API_V2_ROOT);
         MapManager.getApiManager().queue(new ApiRequest(LinkBuilder.build(new String[]{"login"}), data));
         MapManager.getApiManager().preform();
     }

@@ -22,16 +22,15 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import com.google.maps.android.clustering.ClusterManager;
-
 import com.rsdt.jotial.JotiApp;
 import com.rsdt.jotial.communication.ApiManager;
 import com.rsdt.jotial.communication.ApiRequest;
 import com.rsdt.jotial.communication.ApiResult;
 import com.rsdt.jotial.communication.LinkBuilder;
 import com.rsdt.jotial.communication.StaticApiManger;
-import com.rsdt.jotial.communication.area348.Area348API;
+import com.rsdt.jotial.communication.area348.Area348;
 
+import com.rsdt.jotial.communication.area348.Auth;
 import com.rsdt.jotial.communication.area348.util.SyncUtil;
 import com.rsdt.jotial.data.structures.area348.receivables.ScoutingGroepInfo;
 
@@ -171,7 +170,7 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
             public boolean apply(ApiResult result) {
                 return result.getRequest().getUrl().getPath().split("/")[1].equals("sc")
                         && result.getResponseCode() == 200
-                        && result.getRequest().getType().equals(ApiRequest.GET);
+                        && result.getRequest().getMethod().equals(ApiRequest.GET);
             }
         });
 
@@ -373,49 +372,60 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
          * */
         public void toBundle(Bundle bundle)
         {
-            /**
-             * Put the camera's position in the bundle.
-             * */
-            bundle.putParcelable("camera", googleMap.getCameraPosition());
 
-            /**
-             * Put the ScoutingGroep items in the bundle.
-             * */
-            bundle.putParcelableArrayList("sc", scClusterManager.getItems());
-
-            MapBehaviour behaviour;
-            String[] keywords = new String[mapBehaviourManager.size()];
-            int count = 0;
-
-            for(HashMap.Entry<String, MapBehaviour> entry : mapBehaviourManager.entrySet())
+            if(googleMap != null)
             {
-                behaviour = entry.getValue();
-                if(behaviour instanceof VosMapBehaviour)
-                {
-                    bundle.putParcelable("vos " + ((VosMapBehaviour) behaviour).getDeelgebied(), behaviour.to());
-                    keywords[count] = "vos " + ((VosMapBehaviour) behaviour).getDeelgebied();
-                }
-
-                if(behaviour instanceof HunterMapBehaviour)
-                {
-                    bundle.putParcelable("hunter", behaviour.to());
-                    keywords[count] = "hunter";
-                }
-
-                if (behaviour instanceof ScoutingGroepMapBehaviour)
-                {
-                    bundle.putParcelable("sc", behaviour.to());
-                    keywords[count] = "sc";
-                }
-
-                if(behaviour instanceof FotoOpdrachtMapBehaviour)
-                {
-                    bundle.putParcelable("foto", behaviour.to());
-                    keywords[count] = "foto";
-                }
-                count++;
+                /**
+                 * Put the camera's position in the bundle.
+                 * */
+                bundle.putParcelable("camera", googleMap.getCameraPosition());
             }
-            bundle.putStringArray("keywords", keywords);
+
+            if(scClusterManager != null)
+            {
+                /**
+                 * Put the ScoutingGroep items in the bundle.
+                 * */
+                bundle.putParcelableArrayList("scCluster", scClusterManager.getItems());
+            }
+
+            if(mapBehaviourManager != null)
+            {
+                MapBehaviour behaviour;
+                String[] keywords = new String[mapBehaviourManager.size()];
+                int count = 0;
+
+                for(HashMap.Entry<String, MapBehaviour> entry : mapBehaviourManager.entrySet())
+                {
+                    behaviour = entry.getValue();
+                    if(behaviour instanceof VosMapBehaviour)
+                    {
+                        bundle.putParcelable("vos " + ((VosMapBehaviour) behaviour).getDeelgebied(), behaviour.to());
+                        keywords[count] = "vos " + ((VosMapBehaviour) behaviour).getDeelgebied();
+                    }
+
+                    if(behaviour instanceof HunterMapBehaviour)
+                    {
+                        bundle.putParcelable("hunter", behaviour.to());
+                        keywords[count] = "hunter";
+                    }
+
+                    if (behaviour instanceof ScoutingGroepMapBehaviour)
+                    {
+                        bundle.putParcelable("sc", behaviour.to());
+                        keywords[count] = "sc";
+                    }
+
+                    if(behaviour instanceof FotoOpdrachtMapBehaviour)
+                    {
+                        bundle.putParcelable("foto", behaviour.to());
+                        keywords[count] = "foto";
+                    }
+                    count++;
+                }
+                bundle.putStringArray("keywords", keywords);
+            }
+
         }
 
         /**
@@ -439,7 +449,7 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
             /**
              * Get the scouting groep items out of the Bundle.
              * */
-            state.scItems = bundle.getParcelableArrayList("sc");
+            state.scItems = bundle.getParcelableArrayList("scCluster");
 
             /**
              * Get the keywords for the various MapData.
@@ -553,7 +563,7 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
             /**
              * The scouting groep items.
              * */
-            ArrayList<ScoutingGroepInfo> scItems;
+            ArrayList<ScoutingGroepInfo> scItems = new ArrayList<>();
 
             /**
              * The map data of the state.
@@ -571,6 +581,12 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                 {
                     mapData.clear();
                     mapData = null;
+                }
+
+                if(scItems != null)
+                {
+                    scItems.clear();
+                    scItems = null;
                 }
             }
 
@@ -1136,7 +1152,7 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                          * */
                         return !result.getRequest().getUrl().getPath().split("/")[1].equals("sc") &&
                                 !result.getRequest().getUrl().getPath().split("/")[1].equals("login")
-                                && result.getRequest().getType().equals(ApiRequest.GET)
+                                && result.getRequest().getMethod().equals(ApiRequest.GET)
                                 && result.getResponseCode() == 200;
                     }
                 });
@@ -1236,9 +1252,9 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
         {
 
             /**
-             * Set the root of the LinkBuilder to the Area348's one.
+             * Set the API_V1_ROOT of the LinkBuilder to the Area348's one.
              * */
-            LinkBuilder.setRoot(Area348API.rootV2);
+            LinkBuilder.setRoot(Area348.API_V2_ROOT);
 
             /**
              * Get all the keywords.
@@ -1410,9 +1426,34 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
             else
             {
                 /**
+                 * Setup the event, to recall the sync after successful authentication.
+                 * */
+                JotiApp.MainTracker.subscribe(new Tracker.TrackerSubscriberCallback() {
+                    @Override
+                    public void onConditionMet(Tracker.TrackerMessage message) {
+
+                        /**
+                         * Recall the sync.
+                         * */
+                        sync();
+
+                        /**
+                         * Unsubscribe to prevent leakage.
+                         * */
+                        JotiApp.MainTracker.postponeUnsubscribe(this);
+                    }
+                }, new Predicate<String>() {
+                    @Override
+                    public boolean apply(String s) {
+                        return (s.equals(Auth.TRACKER_AUTH_SUCCEEDED));
+                    }
+                });
+
+                /**
                  * Require a auth, so that we can sync.
                  * */
                 JotiApp.Auth.requireAuth();
+
             }
         }
 
@@ -1443,6 +1484,9 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                  * */
                 public Date lastSync;
 
+                /**
+                 * Initializes a new instance of SyncStateItem.
+                 * */
                 public SyncStateItem(boolean needsSync, boolean hasBeenSynced)
                 {
                     this.needsSync = needsSync;
@@ -1506,10 +1550,10 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                 if(JotiApp.Auth.isAuth())
                 {
                     /**
-                     * Use the root of the v1 API.
+                     * Use the API_V1_ROOT of the v1 API.
                      * TODO: Update to v2 API usage.
                      * */
-                    LinkBuilder.setRoot(Area348API.root);
+                    LinkBuilder.setRoot(Area348.API_V1_ROOT);
 
                     /**
                      * Queue in some requests.

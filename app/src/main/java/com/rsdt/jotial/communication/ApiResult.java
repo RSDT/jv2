@@ -1,5 +1,7 @@
 package com.rsdt.jotial.communication;
 
+import java.util.Date;
+
 /**
  * @author Dingenis Sieger Sinke
  * @version 1.0
@@ -27,7 +29,6 @@ public class ApiResult {
         this.data = data;
         this.responseCode = responseCode;
     }
-
 
     /**
      * The associated request.
