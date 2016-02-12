@@ -118,14 +118,32 @@
     -->
     <string name="pref_cat_map">Kaart</string>
 
+    <string name="pref_map_type_title">Uiterlijk</string>
+    <string name="pref_map_type_sum">Verander hier het uiterlijk van de kaart</string>
+    <string name="pref_map_type_options_def">1</string>
+
+    <string-array name="pref_map_type_options">
+        <item>Normaal</item>
+        <item>Satelliet</item>
+        <item>Terrein</item>
+        <item>Hybride</item>
+    </string-array>
+
+    <string-array name="pref_map_type_options_data">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+    </string-array>
+
     <!--
     The hunt name section.
     -->
     <string name="pref_map_hunt_name_title">Huntnaam</string>
     <string name="pref_map_hunt_name_sum">Je naam zichtbaar op de map</string>
 
-    <string name="pref_map_smart_view_title">Smart View</string>
-    <string name="pref_map_smart_view_sum">Een slimme manier om de map te bekijken.</string>
+    <string name="pref_map_smart_view_title">Smart ViewSync</string>
+    <string name="pref_map_smart_view_sum">Een slimme manier om de map te bekijken en gegevens op te halen</string>
 
 
     <string name="pref_map_smart_view_options_title">Smart View Options</string>

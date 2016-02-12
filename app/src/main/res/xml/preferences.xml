@@ -36,6 +36,15 @@
 
     <PreferenceCategory android:title="@string/pref_cat_map">
 
+        <ListPreference
+            android:title="@string/pref_map_type_title"
+            android:summary="@string/pref_map_type_sum"
+            android:key="pref_map_type"
+            android:entries="@array/pref_map_type_options"
+            android:entryValues="@array/pref_map_type_options_data"
+            android:defaultValue="@string/pref_map_type_options_def"
+            />
+
         <EditTextPreference
             android:title="@string/pref_map_hunt_name_title"
             android:key="pref_map_hunt_name"

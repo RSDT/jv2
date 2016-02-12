@@ -2,15 +2,15 @@ package com.rsdt.jotiv2;
 
 import android.app.DialogFragment;
 import android.app.FragmentTransaction;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.support.design.widget.CoordinatorLayout;
+import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-import android.view.Gravity;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -24,8 +24,6 @@ import android.view.animation.AnimationUtils;
 import android.view.animation.RotateAnimation;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.android.internal.util.Predicate;
@@ -73,6 +71,11 @@ public class MainActivity extends AppCompatActivity
      * The NavigationViewHeaderManager of the app, for updating the header info.
      * */
     private NavigationViewHeaderManager navigationViewHeaderManager = new NavigationViewHeaderManager();
+
+    /**
+     * The PreferenceChangesManager of the app, for executing the changes.
+     * */
+    private PreferenceChangesManager preferenceChangesManager = new PreferenceChangesManager();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -124,6 +127,11 @@ public class MainActivity extends AppCompatActivity
         navigationViewHeaderManager.initialize(savedInstanceState);
 
         /**
+         * Initialize the PreferenceChangesManager.
+         * */
+        preferenceChangesManager.initialize();
+
+        /**
          * Check if the savedInstance is null, if so this is the first run.
          * */
         if (savedInstanceState == null) {
@@ -153,7 +161,6 @@ public class MainActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
 
     }
-
 
     /**
      * Save data.
@@ -328,6 +335,34 @@ public class MainActivity extends AppCompatActivity
     }
 
 
+
+    private class PreferenceChangesManager implements SharedPreferences.OnSharedPreferenceChangeListener
+    {
+
+        public void initialize()
+        {
+            PreferenceManager.getDefaultSharedPreferences(JotiApp.getContext()).registerOnSharedPreferenceChangeListener(this);
+        }
+
+        @Override
+        public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+            switch (key)
+            {
+                case "pref_map_type":
+                    if(mapManager.getGoogleMap() != null)
+                    {
+                        mapManager.getGoogleMap().setMapType(Integer.parseInt(sharedPreferences.getString("pref_map_type", "1")));
+                    }
+                    break;
+            }
+        }
+
+        public void destroy()
+        {
+            PreferenceManager.getDefaultSharedPreferences(JotiApp.getContext()).unregisterOnSharedPreferenceChangeListener(this);
+        }
+    }
+
     private class NavigationViewHeaderManager implements UserControl.OnUserInfoRetrievedCallback, UserControl.OnUserAvatarRetrievedCallback
     {
 
@@ -436,7 +471,7 @@ public class MainActivity extends AppCompatActivity
          * Value indicating if the menu is visible or not.
          * */
         public boolean visible = false;
-        
+
         /**
          * Initializes the menu.
          * */
