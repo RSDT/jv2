@@ -124,9 +124,12 @@ public class ApiManager {
      * */
     public void process(ArrayList<ApiResult> results)
     {
-        new ResultProcessingTask(ORIGIN_PROCESS).execute(results.toArray(new ApiResult[results.size()]));
-        Log.i("ApiManager", "ApiTask.onPostExecute() - started running ResultProcessingTask on results");
-        Log.i("ApiManager", "ApiTask.onPostExecute() - completed " + results.size() + " tasks");
+        if(results.size() > 0)
+        {
+            new ResultProcessingTask(ORIGIN_PROCESS).execute(results.toArray(new ApiResult[results.size()]));
+            Log.i("ApiManager", "ApiTask.onPostExecute() - started running ResultProcessingTask on results");
+            Log.i("ApiManager", "ApiTask.onPostExecute() - completed " + results.size() + " tasks");
+        }
     }
 
     /**

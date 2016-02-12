@@ -50,7 +50,6 @@ public class ScoutingGroepClusterManager extends ClusterManager<ScoutingGroepInf
         items.clear();
     }
 
-
     public ArrayList<ScoutingGroepInfo> getItems() {
         return items;
     }

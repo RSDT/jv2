@@ -6,6 +6,7 @@ import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.util.Pair;
 
 import com.android.internal.util.Predicate;
 
@@ -20,6 +21,7 @@ import com.rsdt.jotial.communication.LinkBuilder;
 
 import com.rsdt.jotial.data.structures.area348.receivables.UserInfo;
 
+import com.rsdt.jotial.io.AppData;
 import com.rsdt.jotial.mapping.area348.MapManager;
 
 import com.rsdt.jotiv2.Tracker;
@@ -46,10 +48,25 @@ public class UserControl implements ApiManager.OnApiTaskCompleteCallback {
      * */
     private ArrayList<OnUserAvatarRetrievedCallback> onUserAvatarRetrievedCallbacks = new ArrayList<>();
 
+    /**
+     * Buffer to hold the UserInfo when there are no listeners.
+     * */
+    private UserInfo infoBuffer;
+
+    /**
+     * Buffer to hold the Drawable when there are no listeners.
+     * */
+    private Drawable drawableBuffer;
 
     public void addInfoListener(OnUserInfoRetrievedCallback callback)
     {
         onUserInfoRetrievedCallbacks.add(callback);
+
+        if(infoBuffer != null)
+        {
+            callback.onUserInfoRetrieved(infoBuffer);
+            infoBuffer = null;
+        }
     }
 
     public void removeInfoListener(OnUserInfoRetrievedCallback callback)
@@ -60,6 +77,12 @@ public class UserControl implements ApiManager.OnApiTaskCompleteCallback {
     public void addAvatarListener(OnUserAvatarRetrievedCallback callback)
     {
         onUserAvatarRetrievedCallbacks.add(callback);
+
+        if(drawableBuffer != null)
+        {
+            callback.onUserAvatarRetrieved(drawableBuffer);
+            drawableBuffer = null;
+        }
     }
 
     public void removeAvatarListener(OnUserAvatarRetrievedCallback callback)
@@ -80,9 +103,17 @@ public class UserControl implements ApiManager.OnApiTaskCompleteCallback {
         });
     }
 
+    public void initialize()
+    {
+        /**
+         * Read the user's avatar.
+         * */
+        new UserAvatarReadTask().execute(UserAvatarReadTask.USER_AVATAR);
+    }
+
     @Override
     public void onApiTaskCompleted(ArrayList<ApiResult> results, String origin) {
-        new UserInfoProcessingTask().execute(results.toArray(new ApiResult[results.size()]));
+        new UserInfoProcessingTask(origin).execute(results.toArray(new ApiResult[results.size()]));
     }
 
     /**
@@ -111,6 +142,13 @@ public class UserControl implements ApiManager.OnApiTaskCompleteCallback {
      */
     private class UserInfoProcessingTask extends AsyncTask<ApiResult, Integer, UserInfo>
     {
+
+        private String origin;
+
+        public UserInfoProcessingTask(String origin)
+        {
+            this.origin = origin;
+        }
 
         @Override
         protected UserInfo doInBackground(ApiResult... params) {
@@ -166,6 +204,18 @@ public class UserControl implements ApiManager.OnApiTaskCompleteCallback {
             if(finalResult != null)
             {
                 /**
+                 * Check if the data is produced via the preform method,
+                 * if so save the result.
+                 * */
+                if(origin.equals(ApiManager.ORIGIN_PREFORM))
+                {
+                    /**
+                     * Save the result in the background.
+                     * */
+                    AppData.saveObjectAsJsonInBackground(finalResult, MapManager.MapStorageUtil.getUser());
+                }
+
+                /**
                  * Deserialize the UserInfo.
                  * */
                 buffer = new Gson().fromJson(finalResult.getData(), UserInfo.class);
@@ -197,29 +247,38 @@ public class UserControl implements ApiManager.OnApiTaskCompleteCallback {
 
             if(info != null)
             {
-
                 /**
-                 * Allocate callback as buffer.
+                 * Check if there are listeners, if not buffer the result.
                  * */
-                OnUserInfoRetrievedCallback callback;
-
-                /**
-                 * Loop through each callback.
-                 * */
-                for(int i = 0; i < onUserInfoRetrievedCallbacks.size(); i++)
+                if(onUserInfoRetrievedCallbacks.size() > 0)
                 {
                     /**
-                     * Set the callback.
+                     * Allocate callback as buffer.
                      * */
-                    callback = onUserInfoRetrievedCallbacks.get(i);
+                    OnUserInfoRetrievedCallback callback;
 
                     /**
-                     * Check if it isn't null, if so invoke it.
+                     * Loop through each callback.
                      * */
-                    if(callback != null)
+                    for(int i = 0; i < onUserInfoRetrievedCallbacks.size(); i++)
                     {
-                        callback.onUserInfoRetrieved(info);
+                        /**
+                         * Set the callback.
+                         * */
+                        callback = onUserInfoRetrievedCallbacks.get(i);
+
+                        /**
+                         * Check if it isn't null, if so invoke it.
+                         * */
+                        if(callback != null)
+                        {
+                            callback.onUserInfoRetrieved(info);
+                        }
                     }
+                }
+                else
+                {
+                    infoBuffer = info;
                 }
 
                 /**
@@ -284,6 +343,77 @@ public class UserControl implements ApiManager.OnApiTaskCompleteCallback {
             if(drawable != null)
             {
                 /**
+                 * Save the avatar.
+                 * */
+                AppData.saveDrawableInBackground(drawable, UserAvatarReadTask.USER_AVATAR);
+
+                /**
+                 * Check if there are listeners, if not buffer the result.
+                 * */
+                if(onUserAvatarRetrievedCallbacks.size() > 0)
+                {
+                    /**
+                     * Allocate callback as buffer.
+                     * */
+                    OnUserAvatarRetrievedCallback callback;
+
+                    /**
+                     * Loop trough each callback.
+                     * */
+                    for(int i = 0; i < onUserAvatarRetrievedCallbacks.size(); i++) {
+                        /**
+                         * Set the callback.
+                         * */
+                        callback = onUserAvatarRetrievedCallbacks.get(i);
+
+                        /**
+                         * Check if the callback isn't null, if so invoke it.
+                         * */
+                        if(callback != null)
+                        {
+                            callback.onUserAvatarRetrieved(drawable);
+                        }
+                    }
+                }
+                else
+                {
+                    drawableBuffer = drawable;
+                }
+
+                JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_USERCONTROL_AVATAR_RETRIEVE_SUCCEEDED, "DownloadAvatarTask", "The avatar has successfully been retrieved."));
+            }
+            else
+            {
+                JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_USERCONTROL_AVATAR_RETRIEVE_FAILED, "DownloadAvatarTask", "Failed to retrieve avatar."));
+            }
+
+        }
+    }
+
+    private class UserAvatarReadTask extends AsyncTask<String, Integer, Drawable>
+    {
+        @Override
+        protected Drawable doInBackground(String... params) {
+            for(int i = 0; i < params.length; i++)
+            {
+                if(AppData.hasSave(params[i]))
+                {
+                    return AppData.getDrawable(params[i]);
+                }
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Drawable drawable) {
+            super.onPostExecute(drawable);
+
+            /**
+             * Check if there are listeners, if not buffer the result.
+             * */
+            if(onUserAvatarRetrievedCallbacks.size() > 0)
+            {
+                /**
                  * Allocate callback as buffer.
                  * */
                 OnUserAvatarRetrievedCallback callback;
@@ -306,16 +436,16 @@ public class UserControl implements ApiManager.OnApiTaskCompleteCallback {
                         callback.onUserAvatarRetrieved(drawable);
                     }
                 }
-                JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_USERCONTROL_AVATAR_RETRIEVE_SUCCEEDED, "DownloadAvatarTask", "The avatar has successfully been retrieved."));
             }
             else
             {
-                JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_USERCONTROL_AVATAR_RETRIEVE_FAILED, "DownloadAvatarTask", "Failed to retrieve avatar."));
+                drawableBuffer = drawable;
             }
 
         }
-    }
 
+        public static final String USER_AVATAR = "USER_AVATAR";
+    }
 
     /**
      * Defines a callback for when a UserInfo is retrieved.

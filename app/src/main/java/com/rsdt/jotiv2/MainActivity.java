@@ -5,8 +5,10 @@ import android.app.FragmentTransaction;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.view.Gravity;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -20,6 +22,8 @@ import android.view.animation.AnimationUtils;
 import android.view.animation.RotateAnimation;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.android.internal.util.Predicate;
@@ -595,13 +599,12 @@ public class MainActivity extends AppCompatActivity
 
         @Override
         public void onSnackbarShow(Snackbar snackbar) {
-            bar = true;
+            hide();
         }
 
         @Override
         public void onSnackbarDismissed(Snackbar snackbar, int event) {
 
-            bar = false;
         }
 
         public void destroy()

@@ -35,11 +35,11 @@ public class JotiApp extends Application {
      * */
     public static UserControl UserControl = new UserControl();
 
-
     @Override
     public void onCreate() {
         instance = this;
         Auth.initialize();
+        UserControl.initialize();
         super.onCreate();
     }
 

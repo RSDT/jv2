@@ -53,6 +53,7 @@ import com.rsdt.jotiv2.Tracker;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -292,6 +293,7 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
         public static final String RESULT_SC = "RESULT_SC";
         public static final String RESULT_FOTO = "RESULT_FOTO";
         public static final String RESULT_HUNTER = "RESULT_HUNTER";
+        public static final String RESULT_USER = "RESULT_USER";
 
         public static final String RESULT_VOS_A = "RESULT_VOS_A";
         public static final String RESULT_VOS_B = "RESULT_VOS_B";
@@ -315,10 +317,13 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
 
         public static void readFromSave(String[] parts) { new MapStorageReadTask().execute(parts); }
 
+        public static final String getUser() { return MapStorageReadTask.RESULT_USER; }
+
         public static final String[] getAll() { return new String[] {
                 MapStorageReadTask.RESULT_SC,
                 MapStorageReadTask.RESULT_FOTO,
                 MapStorageReadTask.RESULT_HUNTER,
+                MapStorageReadTask.RESULT_USER,
                 MapStorageReadTask.RESULT_VOS_A,
                 MapStorageReadTask.RESULT_VOS_B,
                 MapStorageReadTask.RESULT_VOS_C,
@@ -385,8 +390,10 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
             {
                 /**
                  * Put the ScoutingGroep items in the bundle.
+                 * We can't put a ArrayList in, because it will contain no items when gotten back out of the bundle.
+                 * I don't know where this is coming from, it's peculiar that a array does seem to work.
                  * */
-                bundle.putParcelableArrayList("scCluster", scClusterManager.getItems());
+                bundle.putParcelableArray("scCluster", scClusterManager.getItems().toArray(new ScoutingGroepInfo[scClusterManager.getItems().size()]));
             }
 
             if(mapBehaviourManager != null)
@@ -449,7 +456,7 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
             /**
              * Get the scouting groep items out of the Bundle.
              * */
-            state.scItems = bundle.getParcelableArrayList("scCluster");
+            state.scItems = (ScoutingGroepInfo[])bundle.getParcelableArray("scCluster");
 
             /**
              * Get the keywords for the various MapData.
@@ -484,7 +491,7 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
             /**
              * Add items to the cluster manager, and cluster them.
              * */
-            scClusterManager.addItems(state.scItems);
+            scClusterManager.addItems(new ArrayList<>(Arrays.asList(state.scItems)));
             scClusterManager.cluster();
 
             /**
@@ -563,7 +570,7 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
             /**
              * The scouting groep items.
              * */
-            ArrayList<ScoutingGroepInfo> scItems = new ArrayList<>();
+            ScoutingGroepInfo[] scItems;
 
             /**
              * The map data of the state.
@@ -585,7 +592,6 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
 
                 if(scItems != null)
                 {
-                    scItems.clear();
                     scItems = null;
                 }
             }
@@ -990,7 +996,7 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                 /**
                  * Save them in the background with the AppData class.
                  * */
-                AppData.cacheObjectAsJsonInBackground(currentResult, MapStorageReadTask.RESULT_SC);
+                AppData.saveObjectAsJsonInBackground(currentResult, MapStorageReadTask.RESULT_SC);
             }
 
         }
@@ -1366,6 +1372,9 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                                         case "SC":
                                             apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "sc", JotiApp.Auth.getKey(), "all" })));
                                             break;
+                                        case "USER":
+                                            apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "gebruiker", JotiApp.Auth.getKey(), "info" })));
+                                            break;
                                     }
                                 }
                             }
@@ -1389,6 +1398,9 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                                             break;
                                         case "SC":
                                             apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "sc", JotiApp.Auth.getKey(), "all" })));
+                                            break;
+                                        case "USER":
+                                            apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "gebruiker", JotiApp.Auth.getKey(), "info" })));
                                             break;
                                     }
                                 }
