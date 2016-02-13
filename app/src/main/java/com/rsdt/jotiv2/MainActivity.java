@@ -186,9 +186,9 @@ public class MainActivity extends AppCompatActivity
         super.onResume();
 
         /**
-         * Get the map async.
+         * Setup the map if needed.
          * */
-        ((MapFragment)getFragmentManager().findFragmentById(R.id.container_map)).getMapAsync(this);
+        setupMapIfNeeded();
 
         /**
          * Report to the tracker, that the UI is available.
@@ -200,6 +200,29 @@ public class MainActivity extends AppCompatActivity
     public void onMapReady(GoogleMap googleMap) {
         mapManager.initialize(googleMap);
         googleMap.setInfoWindowAdapter(new JotiInfoWindowAdapter(this.getLayoutInflater(), mapManager.getMapBehaviourManager()));
+    }
+
+    /**
+     * Setup the map, if it is neeeded.
+     * */
+    public void setupMapIfNeeded()
+    {
+        if(navigationManager.mapFragment == null)
+        {
+            if(mapManager.getGoogleMap() == null) {
+                navigationManager.mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.container_map);
+
+                if (navigationManager.mapFragment != null) {
+                    navigationManager.mapFragment.getMapAsync(this);
+                }
+            }}
+        else
+        {
+            if(mapManager.getGoogleMap() == null)
+            {
+                navigationManager.mapFragment.getMapAsync(this);
+            }
+        }
     }
 
     @Override
@@ -830,7 +853,6 @@ public class MainActivity extends AppCompatActivity
             ft.hide(preferenceFragment);
             ft.commit();
         }
-
 
         /**
          * Disposes the object.

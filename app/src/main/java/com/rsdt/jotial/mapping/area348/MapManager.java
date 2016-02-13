@@ -13,6 +13,7 @@ import com.android.internal.util.Predicate;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
@@ -636,7 +637,10 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
 
                 @Override
                 public boolean apply(Marker marker) {
-                    return (marker.getTitle().startsWith("vos") || marker.getTitle().startsWith("sc"));
+                    if(marker.getTitle() != null) {
+                        return (marker.getTitle().startsWith("vos") || marker.getTitle().startsWith("sc"));
+                    }
+                    return false;
                 }
 
                 @Override
@@ -685,7 +689,10 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
 
                 @Override
                 public boolean apply(Marker marker) {
-                    return (marker.getTitle().startsWith("vos"));
+                    if(marker.getTitle() != null) {
+                        return (marker.getTitle().startsWith("vos"));
+                    }
+                    return false;
                 }
 
                 @Override
@@ -748,11 +755,17 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
          * */
         private void setupSc()
         {
+            /**
+             * Setup event for indiviual ScoutingGroep
+             * */
             mapBehaviourManager.getsEventRaiser().getEvents().add(new MapBehaviourEvent<Marker>(MapBehaviourEvent.MAP_BEHAVIOUR_EVENT_TRIGGER_INFO_WINDOW) {
 
                 @Override
                 public boolean apply(Marker marker) {
-                    return (marker.getTitle().startsWith("sc"));
+                    if(marker.getTitle() != null) {
+                        return (marker.getTitle().startsWith("sc") && !marker.getTitle().startsWith("scc"));
+                    }
+                    return false;
                 }
 
                 @Override
@@ -798,6 +811,37 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                      * Add the circle to the map.
                      * */
                     indicationCircle = googleMap.addCircle(cOptions);
+                }
+            });
+
+            /**
+             * Setup event for clusters.
+             * */
+            mapBehaviourManager.getsEventRaiser().getEvents().add(new MapBehaviourEvent<Marker>(MapBehaviourEvent.MAP_BEHAVIOUR_EVENT_TRIGGER_INFO_WINDOW) {
+
+                @Override
+                public boolean apply(Marker marker) {
+                    if(marker.getTitle() != null) {
+                        return (marker.getTitle().startsWith("scc"));
+                    }
+                    return false;
+                }
+
+                @Override
+                public void onConditionMet(Object[] args) {
+
+                    Marker clusterMarker = (Marker)args[1];
+
+
+                    String[] mArgs = clusterMarker.getTitle().split(" ");
+
+                    View view = (View)args[0];
+
+                    ((TextView) view.findViewById(R.id.infoWindow_infoType)).setText("ScoutingGroepCluster");
+                    ((TextView) view.findViewById(R.id.infoWindow_naam)).setText("Een cluster van ScoutingGroepen");
+                    ((TextView) view.findViewById(R.id.infoWindow_dateTime_adres)).setText("Grote: " + mArgs[1]);
+                    ((TextView) view.findViewById(R.id.infoWindow_coordinaat)).setText(mArgs[2] + " , " + mArgs[3]);
+
                 }
             });
         }

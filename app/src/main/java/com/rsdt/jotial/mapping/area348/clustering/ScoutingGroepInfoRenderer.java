@@ -44,18 +44,23 @@ public class ScoutingGroepInfoRenderer extends DefaultClusterRenderer<ScoutingGr
 
     @Override
     protected void onBeforeClusterRendered(Cluster<ScoutingGroepInfo> cluster, MarkerOptions markerOptions) {
-        super.onBeforeClusterRendered(cluster, markerOptions);
-
         /**
          * Define it is a cluster by a format Scouting Groep Cluster(scc).
          * NOTE: You can make a behaviour for this cluster.
          * */
-        markerOptions.title("scc;" + cluster.getSize() + ";" + cluster.getPosition().latitude + ";" + cluster.getPosition().longitude);
+        markerOptions.title("scc " + cluster.getSize() + " " + cluster.getPosition().latitude + " " + cluster.getPosition().longitude);
+
+        super.onBeforeClusterRendered(cluster, markerOptions);
     }
 
     @Override
     protected void onClusterRendered(Cluster<ScoutingGroepInfo> cluster, Marker marker) {
         super.onClusterRendered(cluster, marker);
+    }
+
+    @Override
+    protected boolean shouldRenderAsCluster(Cluster<ScoutingGroepInfo> cluster) {
+        return super.shouldRenderAsCluster(cluster);
     }
 
     @Override

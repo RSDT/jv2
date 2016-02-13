@@ -46,7 +46,10 @@ public class HunterMapBehaviour extends MapBehaviour {
         super.eventRaiser.getEvents().add(new MapBehaviourEvent<Marker>(MapBehaviourEvent.MAP_BEHAVIOUR_EVENT_TRIGGER_INFO_WINDOW) {
             @Override
             public boolean apply(Marker marker) {
-                return (marker.getTitle().startsWith("hunter"));
+                if(marker.getTitle() != null) {
+                    return (marker.getTitle().startsWith("hunter"));
+                }
+                return false;
             }
 
             @Override
