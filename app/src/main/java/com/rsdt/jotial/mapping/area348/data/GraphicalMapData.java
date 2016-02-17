@@ -111,7 +111,6 @@ public class GraphicalMapData {
         {
             circles.get(i).setVisible(value);
         }
-
     }
 
 

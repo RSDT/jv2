@@ -38,7 +38,7 @@ public class StaticApiManger extends ApiManager {
          * */
         if(!waitList.isEmpty())
         {
-            new StaticResultProcessingTask().execute(waitList.toArray(new ApiResult[waitList.size()]));
+            new StaticResultProcessingTask(ORIGIN_PREFORM).execute(waitList.toArray(new ApiResult[waitList.size()]));
             waitList.clear();
         }
     }
@@ -71,6 +71,19 @@ public class StaticApiManger extends ApiManager {
     }
 
     /**
+     * Processes the results, and invokes the appropriate listeners.
+     * */
+    public void process(ArrayList<ApiResult> results)
+    {
+        if(results.size() > 0)
+        {
+            new StaticResultProcessingTask(ORIGIN_PROCESS).execute(results.toArray(new ApiResult[results.size()]));
+            Log.i("ApiManager", "ApiTask.onPostExecute() - started running StaticResultProcessingTask on results");
+            Log.i("ApiManager", "ApiTask.onPostExecute() - completed " + results.size() + " tasks");
+        }
+    }
+
+    /**
      * @author Dingenis Sieger Sinke
      * @version 1.0
      * @since 20-11-2015
@@ -95,7 +108,7 @@ public class StaticApiManger extends ApiManager {
             /**
              * Start result processing on the results.
              * */
-            new StaticResultProcessingTask().execute(results.toArray(new ApiResult[results.size()]));
+            new StaticResultProcessingTask(ORIGIN_PREFORM).execute(results.toArray(new ApiResult[results.size()]));
 
             /**
              * Log what has been done, and what we are doing.
@@ -113,6 +126,12 @@ public class StaticApiManger extends ApiManager {
      * */
     private class StaticResultProcessingTask extends ResultProcessingTask
     {
+
+        public StaticResultProcessingTask(String origin)
+        {
+            super(origin);
+        }
+
         @Override
         protected void onPostExecute(ArrayList<ApiResult> apiResults) {
             super.onPostExecute(apiResults);

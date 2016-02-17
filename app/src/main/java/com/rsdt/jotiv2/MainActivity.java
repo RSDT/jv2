@@ -139,7 +139,7 @@ public class MainActivity extends AppCompatActivity
             /**
              * Show a Snackbar to inform the user about the loading.
              * */
-            SnackbarControl.show(Snackbar.make(findViewById(R.id.content_layout), "Loading save files, hold on.", Snackbar.LENGTH_LONG));
+            SnackbarControl.show(Snackbar.make(findViewById(R.id.content_layout), "Gegevens aan het laden, wacht even.", Snackbar.LENGTH_LONG));
 
             /**
              * Read the MapData from the save.
@@ -305,12 +305,6 @@ public class MainActivity extends AppCompatActivity
                 break;
             case Auth.TRACKER_AUTH_SUCCEEDED:
                 SnackbarControl.show(Snackbar.make(findViewById(R.id.content_layout), "Succesvol ingelogd.", Snackbar.LENGTH_SHORT));
-
-                /**
-                 * Retrieve the new user info.
-                 * */
-                JotiApp.UserControl.retrieve();
-
                 break;
             case Auth.TRACKER_AUTH_FAILED_UNAUTHORIZED:
                 SnackbarControl.show(Snackbar.make(findViewById(R.id.content_layout), "Kon niet inloggen.", Snackbar.LENGTH_LONG).setAction("Opnieuw", new View.OnClickListener() {
@@ -472,8 +466,15 @@ public class MainActivity extends AppCompatActivity
          * */
         public void saveInstanceState(Bundle state)
         {
-            state.putParcelable("user", info);
-            state.putParcelable("avatar", ((BitmapDrawable)avatar).getBitmap());
+            if(info != null)
+            {
+                state.putParcelable("user", info);
+            }
+
+            if(avatar != null)
+            {
+                state.putParcelable("avatar", ((BitmapDrawable)avatar).getBitmap());
+            }
         }
 
         public void destroy()
@@ -543,7 +544,6 @@ public class MainActivity extends AppCompatActivity
                     v.startAnimation(rotate);
                     v.setEnabled(false);
 
-
                     /**
                      * Subscribe a callback, so we can be informed when the updating has been completed.
                      * */
@@ -564,7 +564,7 @@ public class MainActivity extends AppCompatActivity
                                 case MapManager.TRACKER_MAPMANAGER_CLUSTERING_COMPLETED:
                                     CC = true;
                                     break;
-                                case MapManager.Fetcher.TRACKER_FETCHER_FETCHING_FAILED_AUTH_REQUIRED:
+                                case MapManager.Syncer.TRACKER_SYNCER_SYNC_FAILED_AUTH_REQUIRED:
                                     PC = true;
                                     CC = true;
                                     break;
@@ -585,7 +585,7 @@ public class MainActivity extends AppCompatActivity
                         public boolean apply(String s) {
                             return (s.equals(DataProcessingManager.TRACKER_DATAMANAGER_PROCESSING_COMPLETED) ||
                                     s.equals(MapManager.TRACKER_MAPMANAGER_CLUSTERING_COMPLETED) ||
-                                    s.equals(MapManager.Fetcher.TRACKER_FETCHER_FETCHING_FAILED_AUTH_REQUIRED));
+                                    s.equals(MapManager.Syncer.TRACKER_SYNCER_SYNC_FAILED_AUTH_REQUIRED));
                         }
                     });
 
@@ -597,7 +597,12 @@ public class MainActivity extends AppCompatActivity
             });
 
             FloatingActionButton search = (FloatingActionButton)findViewById(R.id.fab_search);
-
+            search.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mapManager.filter();
+                }
+            });
 
             FloatingActionButton follow = (FloatingActionButton)findViewById(R.id.fab_follow);
         }

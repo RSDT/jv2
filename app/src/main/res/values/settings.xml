@@ -151,8 +151,8 @@
     <string name="pref_map_smart_view_options_def">0</string>
 
     <string-array name="pref_map_smart_view_options">
-        <item>Laat alleen mijn deelgebied zien</item>
-        <item>Laat alle deelgebieden zien maar met alleen vossen uit mijn deelgebied</item>
+        <item>Hou alleen mijn deelgebied bij</item>
+        <item>Hou alleen </item>
         <item>Laat alle deelgebieden zien</item>
     </string-array>
 

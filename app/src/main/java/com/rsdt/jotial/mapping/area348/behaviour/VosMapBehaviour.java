@@ -150,6 +150,22 @@ public class VosMapBehaviour extends MapBehaviour {
             mOptions.anchor(0.5f, 0.5f);
             mOptions.position(new LatLng(infos[i].latitude, infos[i].longitude));
 
+
+            /**
+             * Determine the icon.
+             * */
+            switch (infos[i].icon)
+            {
+                case VOS_ICON_TARGET:
+                    break;
+                case VOS_ICON_HINT:
+                    break;
+                case VOS_ICON_SPOT:
+                    break;
+                case VOS_ICON_HUNT:
+                    break;
+            }
+
             BitmapFactory.Options bmOptions = new BitmapFactory.Options();
             bmOptions.inSampleSize = 4;
             /**
@@ -168,7 +184,7 @@ public class VosMapBehaviour extends MapBehaviour {
                 {
                     case "a":
                         bitmap =BitmapFactory.decodeResource(JotiApp.getContext().getResources(),
-                                R.drawable.target_rood ,bmOptions);
+                                R.drawable.target_rood,bmOptions);
                         break;
                     case "b":
                         bitmap =BitmapFactory.decodeResource(JotiApp.getContext().getResources(),
@@ -261,6 +277,27 @@ public class VosMapBehaviour extends MapBehaviour {
 
         return buffer;
     }
+
+
+    /**
+     * Defines the number for the icon target.
+     * */
+    public static final int VOS_ICON_TARGET = 1;
+
+    /**
+     * Defines the number for the icon hint.
+     * */
+    public static final int VOS_ICON_HINT = 2;
+
+    /**
+     * Defines the number for the icon spot.
+     * */
+    public static final int VOS_ICON_SPOT = 3;
+
+    /**
+     * Defines the number for the icon hunt.
+     * */
+    public static final int VOS_ICON_HUNT = 4;
 
     /**
      * Defines the with of the vos polyline.

@@ -26,6 +26,8 @@ public final class Tracker {
      * */
     private ArrayList<TrackerSubscriberCallback> postponedUnsubscribeCallbacks = new ArrayList<>();
 
+    private ArrayList<TrackerMessage> postponedMessages = new ArrayList<>();
+
     /**
      * Subscribe a subscriber.
      *
@@ -55,6 +57,14 @@ public final class Tracker {
     public void postponeUnsubscribe(TrackerSubscriberCallback callback)
     {
         postponedUnsubscribeCallbacks.add(callback);
+    }
+
+    /**
+     * Postpone the reporting of a message to after the report iteration has completed.
+     * */
+    public void postponeReport(TrackerMessage message)
+    {
+        postponedMessages.add(message);
     }
 
     /**
@@ -117,10 +127,37 @@ public final class Tracker {
             postponedUnsubscribeCallbacks.clear();
         }
 
-        /**
-         * Write the message to the console.
-         * */
-        Log.i("Tracker", message.identifier + " - " + message.descripition);
+        if(!postponedMessages.isEmpty())
+        {
+            for(int i = 0; i < postponedMessages.size(); i++)
+            {
+                report(postponedMessages.get(i));
+            }
+
+            postponedMessages.clear();
+        }
+
+        switch (message.level)
+        {
+            case TrackerMessage.LEVEL_INFO:
+                /**
+                 * Write the message to the console.
+                 * */
+                Log.i("Tracker", message.identifier + " - " + message.descripition);
+                break;
+            case TrackerMessage.LEVEL_WARNING:
+                /**
+                 * Write the message to the console.
+                 * */
+                Log.w("Tracker", message.identifier + " - " + message.descripition);
+                break;
+            case TrackerMessage.LEVEL_ERROR:
+                /**
+                 * Write the message to the console.
+                 * */
+                Log.e("Tracker", message.identifier + " - " + message.descripition);
+                break;
+        }
     }
 
     /**
@@ -144,8 +181,14 @@ public final class Tracker {
         private String descripition;
 
         /**
+         * The level of the Message.
+         * */
+        private int level = LEVEL_INFO;
+
+        /**
          * Initializes a new instance of TrackerMessage.
          *
+         * @param identifier The id of the Message.
          * @param title The title of the Message.
          * @param description  The description of the Message.
          * */
@@ -154,6 +197,21 @@ public final class Tracker {
             this.identifier = identifier;
             this.title = title;
             this.descripition = description;
+        }
+
+        /**
+         * Initializes a new instance of TrackerMessage.
+         *
+         * @param identifier The id of the Message.
+         * @param title The title of the Message.
+         * @param description  The description of the Message.
+         * */
+        public TrackerMessage(String identifier, String title, String description, int level)
+        {
+            this.identifier = identifier;
+            this.title = title;
+            this.descripition = description;
+            this.level = level;
         }
 
         /**
@@ -176,6 +234,12 @@ public final class Tracker {
         public String getDescripition() {
             return descripition;
         }
+
+        public static final int LEVEL_INFO = 1;
+
+        public static final int LEVEL_WARNING = 2;
+
+        public static final int LEVEL_ERROR = 3;
     }
 
     /**

@@ -1,8 +1,12 @@
 package com.rsdt.jotial.mapping.area348;
 
+import android.app.Activity;
 import android.graphics.Color;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.annotation.MainThread;
 import android.util.Log;
@@ -13,7 +17,6 @@ import com.android.internal.util.Predicate;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
@@ -48,17 +51,17 @@ import com.rsdt.jotial.mapping.area348.clustering.ScoutingGroepInfoRenderer;
 import com.rsdt.jotial.mapping.area348.data.GraphicalMapData;
 import com.rsdt.jotial.mapping.area348.data.MapData;
 
+import com.rsdt.jotial.mapping.area348.filtering.MapFilter;
+import com.rsdt.jotial.misc.VosUtil;
 import com.rsdt.jotiv2.MainActivity;
 import com.rsdt.jotiv2.R;
 import com.rsdt.jotiv2.Tracker;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Dingenis Sieger Sinke
@@ -165,11 +168,18 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
         this.googleMap = googleMap;
 
         /**
+         * Applies the preferences to the map.
+         * */
+        PreferenceHelper.applyPreferences(googleMap);
+
+        /**
          * Register as listener to the ApiManager, with a filter that applies only to ScoutingGroep Data.
          * */
         apiManager.addListener(this, new Predicate<ApiResult>() {
             @Override
             public boolean apply(ApiResult result) {
+
+                Log.i("sf", "sfsf");
                 return result.getRequest().getUrl().getPath().split("/")[1].equals("sc")
                         && result.getResponseCode() == 200
                         && result.getRequest().getMethod().equals(ApiRequest.GET);
@@ -333,6 +343,36 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                 MapStorageReadTask.RESULT_VOS_F,
                 MapStorageReadTask.RESULT_VOS_X,
         }; }
+    }
+
+    /**
+     * @author Dingenis Sieger Sinke
+     * @version 1.0
+     * @since 13-2-2016
+     *
+     * */
+    public class SearchHelper
+    {
+
+
+        public void searchFor(String id, String characteristic1)
+        {
+            switch (id)
+            {
+                case "SC":
+
+                    ArrayList<ScoutingGroepInfo> items = scClusterManager.getItems();
+
+                    for(int i = 0; i < items.size(); i++)
+                    {
+
+                    }
+
+                    break;
+            }
+        }
+
+
     }
 
     /**
@@ -600,6 +640,83 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
         }
     }
 
+
+    private class SmartFilter
+    {
+
+    }
+
+    public void filter()
+    {
+
+        MapFilter.Builder builder = new MapFilter.Builder();
+        builder.addFilter(new MapFilter.ScoutingGroepFilter(new Predicate<ScoutingGroepInfo>() {
+            @Override
+            public boolean apply(ScoutingGroepInfo scoutingGroepInfo) {
+                return (scoutingGroepInfo.team.equals("a"));
+            }
+        }, MapFilter.ACTION_HIDE));
+
+        /**
+         * This filter will result in:
+         * Every VosMapBehaviour which is not a A deelgebied one,
+         * will be hidden.
+         * The one that is will be shown, all the other items are not affected.
+         * */
+        builder.addFilter(new MapFilter.MapBehaviourFilter(new Predicate<MapBehaviour>() {
+            @Override
+            public boolean apply(MapBehaviour mapBehaviour) {
+                /**
+                 * Checks if the behaviour is a VosMapBehaviour.
+                 * */
+                if(mapBehaviour instanceof VosMapBehaviour)
+                {
+                    /**
+                     * For example return the value indicating if its deelgebied is A.
+                     * */
+                    return (((VosMapBehaviour) mapBehaviour).getDeelgebied() == 'a');
+                }
+                return false;
+            }
+        }, new MapFilter.MapBehaviourFilter.CustomFilterAction() {
+            @Override
+            public int getAction(MapBehaviour behaviour, boolean applies) {
+                /**
+                 * Checks if the behaviour is a VosMapBehaviour.
+                 * */
+                if(behaviour instanceof VosMapBehaviour)
+                {
+                    /**
+                     * Checks if the condition applies for this VosMapBehaviour.
+                     * */
+                    if(applies)
+                    {
+                        /**
+                         * If the condition applies for the item do this.
+                         * */
+                        return MapFilter.ACTION_SHOW;
+                    }
+                    else
+                    {
+                        /**
+                         * If the condition doesn't apply for the item.
+                         * */
+                        return MapFilter.ACTION_HIDE;
+                    }
+                }
+                /**
+                 * Ignore the item, since it is not a VosMapBehaviour.
+                 * */
+                return MapFilter.ACTION_NONE;
+            }
+        }));
+
+        MapFilter filter = builder.create();
+
+        filter.apply(scClusterManager, mapBehaviourManager);
+
+    }
+
     /**
      * @author Dingenis Sieger Sinke
      * @version 1.0
@@ -608,6 +725,19 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
      * */
     private class SpecialEventHandler
     {
+
+        /**
+         * Handler to handle update tasks.
+         * */
+        Handler circleHandler = new Handler();
+
+        String date;
+
+        /**
+         * Value indicating the origin of the special circle.
+         * */
+        String idCircle;
+
         /**
          * Circle to indicate something.
          * */
@@ -661,6 +791,7 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                              * */
                             indicationCircle.remove();
                             indicationCircle = null;
+                            idCircle = ID_NONE;
                             putCircle = false;
                         } else {
                             /**
@@ -668,6 +799,7 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                              * */
                             indicationCircle.remove();
                             indicationCircle = null;
+                            idCircle = ID_NONE;
                             putCircle = true;
                         }
                     } else {
@@ -721,31 +853,44 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                     cOptions.strokeWidth(VosMapBehaviour.VOS_CIRCLE_STROKE_WIDTH);
                     cOptions.strokeColor(VosMapBehaviour.VOS_CIRCLE_STROKE_COLOR);
                     cOptions.fillColor(MapManager.parse(strArgs[1], VosMapBehaviour.VOS_CIRCLE_FILL_COLOR_ALPHA));
+                    cOptions.radius(VosUtil.calculateRadius(strArgs[3] + " " + strArgs[4]));
 
-                    /**
-                     * TODO: Make constants for speed and other settings.
-                     * */
-                    try {
-                        String dateTime = strArgs[3] + " " + strArgs[4];
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
-                        Date date = dateFormat.parse(dateTime);
-
-                        long duration = new Date().getTime() - date.getTime();
-
-                        float diffInHours = TimeUnit.MILLISECONDS.toSeconds(duration) / 60f / 60f;
-
-                        if (diffInHours > 30)
-                            diffInHours = 30;
-                        float mPerHour = ( Float.parseFloat(PreferenceManager.getDefaultSharedPreferences(JotiApp.getContext()).getString("pref_misc_walking_speed", "6.0f")) * 1000);
-                        cOptions.radius(diffInHours *  mPerHour);
-                    } catch (Exception e) {
-                        Log.e("MapManger", "onGetInfoWindow(View, Marker) - circle radius calculation with vos's date failed", e);
-                    }
+                    date = strArgs[3] + " " + strArgs[4];
 
                     /**
                      * Add the circle to the map.
                      * */
                     indicationCircle = googleMap.addCircle(cOptions);
+
+                    idCircle = ID_VOS;
+
+                    /**
+                     *
+                     * */
+                    circleHandler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            if(idCircle.equals(ID_VOS))
+                            {
+                                /**
+                                 * Make sure the circle is not null.
+                                 * */
+                                if(indicationCircle != null)
+                                {
+                                    float radius = VosUtil.calculateRadius(date);
+
+                                    /**
+                                     * Checks if the radius is not the same as the old.
+                                     * */
+                                    if(indicationCircle.getRadius() != radius)
+                                    {
+                                        indicationCircle.setRadius(radius);
+                                        circleHandler.postDelayed(this, 1000);
+                                    }
+                                }
+                            }
+                        }
+                    }, 1000);
                 }
             });
         }
@@ -762,7 +907,7 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
 
                 @Override
                 public boolean apply(Marker marker) {
-                    if(marker.getTitle() != null) {
+                    if (marker.getTitle() != null) {
                         return (marker.getTitle().startsWith("sc") && !marker.getTitle().startsWith("scc"));
                     }
                     return false;
@@ -811,6 +956,8 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                      * Add the circle to the map.
                      * */
                     indicationCircle = googleMap.addCircle(cOptions);
+
+                    idCircle = ID_SC;
                 }
             });
 
@@ -821,7 +968,7 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
 
                 @Override
                 public boolean apply(Marker marker) {
-                    if(marker.getTitle() != null) {
+                    if (marker.getTitle() != null) {
                         return (marker.getTitle().startsWith("scc"));
                     }
                     return false;
@@ -830,12 +977,12 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                 @Override
                 public void onConditionMet(Object[] args) {
 
-                    Marker clusterMarker = (Marker)args[1];
+                    Marker clusterMarker = (Marker) args[1];
 
 
                     String[] mArgs = clusterMarker.getTitle().split(" ");
 
-                    View view = (View)args[0];
+                    View view = (View) args[0];
 
                     ((TextView) view.findViewById(R.id.infoWindow_infoType)).setText("ScoutingGroepCluster");
                     ((TextView) view.findViewById(R.id.infoWindow_naam)).setText("Een cluster van ScoutingGroepen");
@@ -845,6 +992,17 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                 }
             });
         }
+
+
+        public void destroy()
+        {
+            circleHandler = null;
+        }
+
+        public static final String ID_VOS = "ID_VOS";
+        public static final String ID_SC = "ID_SC";
+        public static final String ID_NONE = "ID_NONE";
+
     }
 
     /**
@@ -1120,6 +1278,7 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
 
         if(this.specialEventHandler != null)
         {
+            specialEventHandler.destroy();
             specialEventHandler = null;
         }
 
@@ -1210,7 +1369,7 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                 /**
                  * Setup the response code check, so that error can be reported.
                  * */
-                //setupResponseCodeCheck();
+                setupResponseCodeCheck();
 
 
                 /**
@@ -1296,6 +1455,23 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
         public static boolean useSmartSync() { return PreferenceManager.getDefaultSharedPreferences(JotiApp.getContext()).getBoolean("pref_sync_smart", false); }
 
         /**
+         * Checks if the mobile is connected with the internet.
+         * */
+        public static boolean isConnected()
+        {
+            ConnectivityManager connectivityManager = (ConnectivityManager)JotiApp.getContext().getSystemService(Activity.CONNECTIVITY_SERVICE);
+            NetworkInfo info = connectivityManager.getActiveNetworkInfo();
+            if(info != null)
+            {
+                return info.isConnected();
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        /**
          * Initializes the Syncer.
          * */
         public static void initialize()
@@ -1317,25 +1493,48 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
             for(int i = 0; i < keywords.length; i++)
             {
                 /**
+                 * Setup the interval for each item.
+                 * */
+                long interval;
+
+                switch (keywords[i])
+                {
+                    case MapStorageReadTask.RESULT_SC:
+                        interval = SyncState.SyncStateItem.DONT_USE_INTERVAL;
+                        break;
+                    case MapStorageReadTask.RESULT_USER:
+                        interval = SyncState.SyncStateItem.DONT_USE_INTERVAL;
+                        break;
+                    case MapStorageReadTask.RESULT_HUNTER:
+                        interval = 1000;
+                        break;
+                    case MapStorageReadTask.RESULT_FOTO:
+                        interval = 1000;
+                        break;
+                    default:
+                        interval = 1000;
+                        break;
+                }
+
+                /**
                  * Check if we have data stored, under the keyword.
                  * */
                 if(AppData.hasSave(keywords[i]))
                 {
                     /**
-                     * Put a item, with needsSync = false and hasBeenSynced = true.
+                     * Put a item, with needsSync = false and hasLocalData = true.
                      * */
-                    syncState.put(keywords[i], new SyncState.SyncStateItem(false, true));
+                    syncState.put(keywords[i], new SyncState.SyncStateItem(false, true, interval));
                 }
                 else
                 {
                     /**
-                     * Put a item, with needsSync = true and hasBeenSynced = false.
+                     * Put a item, with needsSync = true and hasLocalData = false.
                      * */
-                    syncState.put(keywords[i], new SyncState.SyncStateItem(true, false));
+                    syncState.put(keywords[i], new SyncState.SyncStateItem(true, false, interval));
                 }
             }
 
-            Fetcher.initialize();
             sync();
         }
 
@@ -1349,135 +1548,186 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
              * */
             if(JotiApp.Auth.isAuth())
             {
-                /**
-                 * Check if Smart Sync is enabled.
-                 * */
-                if(useSmartSync())
+
+                if(isConnected())
                 {
                     /**
-                     * Allocate outside loop.
+                     * Check if Smart Sync is enabled.
                      * */
-                    SyncState.SyncStateItem currentItem;
-
-                    /**
-                     * Get the hunt naam from the Preferences.
-                     * */
-                    String huntNaam = PreferenceManager.getDefaultSharedPreferences(JotiApp.getContext()).getString("pref_map_hunt_name", null);
-
-                    /**
-                     * Value indicating if the hunt naam is valid.
-                     * */
-                    boolean huntNaamValid = false;
-
-                    /**
-                     * Check if the hunt naam is valid.
-                     * */
-                    if(huntNaam != null && !huntNaam.isEmpty()) { huntNaamValid = true; }
-                    else
+                    if(useSmartSync())
                     {
-                        JotiApp.MainTracker.report(new Tracker.TrackerMessage(MainActivity.TRACKER_MAINACTIVITY_PREFERENCE_REQUIRED, "Syncer", "Huntnaam"));
-                    }
-
-                    /**
-                     * Loop through each entry.
-                     * */
-                    for(HashMap.Entry<String, SyncState.SyncStateItem> entry : syncState.entrySet())
-                    {
-                        currentItem = entry.getValue();
+                        /**
+                         * Allocate outside loop.
+                         * */
+                        SyncState.SyncStateItem currentItem;
 
                         /**
-                         * Split the result identifier on "_" symbol.
+                         * Get the hunt naam from the Preferences.
                          * */
-                        String[] args = entry.getKey().split("_");
+                        String huntNaam = PreferenceManager.getDefaultSharedPreferences(JotiApp.getContext()).getString("pref_map_hunt_name", null);
 
                         /**
-                         * Check if the item needs syncing.
+                         * Value indicating if the hunt naam is valid.
                          * */
-                        if(currentItem.needsSync)
+                        boolean huntNaamValid = false;
+
+                        /**
+                         * Check if the hunt naam is valid.
+                         * */
+                        if(huntNaam != null && !huntNaam.isEmpty()) { huntNaamValid = true; }
+                        else
                         {
-                            if(currentItem.hasBeenSynced)
+                            JotiApp.MainTracker.report(new Tracker.TrackerMessage(MainActivity.TRACKER_MAINACTIVITY_PREFERENCE_REQUIRED, "Syncer", "Huntnaam"));
+                        }
+
+                        /**
+                         * Loop through each entry.
+                         * */
+                        for(HashMap.Entry<String, SyncState.SyncStateItem> entry : syncState.entrySet())
+                        {
+                            currentItem = entry.getValue();
+
+                            /**
+                             * Split the result identifier on "_" symbol.
+                             * */
+                            String[] args = entry.getKey().split("_");
+
+                            /**
+                             * Allocate long, to store the inteval between the last sync and now.
+                             * Set default to min value, therefor the item's syncInterval cannot be smaller.
+                             * */
+                            long syncInterval = Long.MIN_VALUE;
+
+                            /**
+                             * Check if the lastSync isn't null, if so calculate sync interval.
+                             * */
+                            if(currentItem.lastSync != null)
                             {
-                                if(args[1].equals("VOS"))
-                                {
-                                    apiManager.queue(new ApiRequest(LinkBuilder.build(new String[]{"vos", JotiApp.Auth.getKey(), args[2], "all", currentItem.lastSync.toString()})));
-                                }
-                                else
-                                {
-                                    switch (args[1])
-                                    {
-                                        case "HUNTER":
-                                            if(huntNaamValid) {
-                                                apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "hunter", JotiApp.Auth.getKey(), "andere",  huntNaam, currentItem.lastSync.toString()})));
-                                            }
-                                            break;
-                                        case "FOTO":
-                                            apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "foto", JotiApp.Auth.getKey(), "all", currentItem.lastSync.toString() })));
-                                            break;
-                                        case "SC":
-                                            apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "sc", JotiApp.Auth.getKey(), "all" })));
-                                            break;
-                                        case "USER":
-                                            apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "gebruiker", JotiApp.Auth.getKey(), "info" })));
-                                            break;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                if(args[1].equals("VOS"))
-                                {
-                                    apiManager.queue(new ApiRequest(LinkBuilder.build(new String[]{ "vos", JotiApp.Auth.getKey(), args[2], "all" })));
-                                }
-                                else
-                                {
-                                    switch (args[1])
-                                    {
-                                        case "HUNTER":
-                                            if(huntNaamValid) {
-                                                apiManager.queue(new ApiRequest(LinkBuilder.build(new String[]{"hunter", JotiApp.Auth.getKey(), "andere", huntNaam})));
-                                            }
-                                            break;
-                                        case "FOTO":
-                                            apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "foto", JotiApp.Auth.getKey(), "all" })));
-                                            break;
-                                        case "SC":
-                                            apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "sc", JotiApp.Auth.getKey(), "all" })));
-                                            break;
-                                        case "USER":
-                                            apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "gebruiker", JotiApp.Auth.getKey(), "info" })));
-                                            break;
-                                    }
-                                }
+                                syncInterval =  (new Date().getTime() - currentItem.lastSync.getTime());
                             }
 
                             /**
-                             * Set the last sync date to now.
+                             * Check if the item needs syncing.
                              * */
-                            currentItem.lastSync = new Date();
+                            if(currentItem.needsSync | (currentItem.useSyncInterval && syncInterval > currentItem.syncInterval))
+                            {
+                                if(currentItem.hasBeenSynced)
+                                {
+                                    if(args[1].equals("VOS"))
+                                    {
+                                        apiManager.queue(new ApiRequest(LinkBuilder.build(new String[]{"vos", JotiApp.Auth.getKey(), args[2], "all", currentItem.lastSync.toString()})));
+                                    }
+                                    else
+                                    {
+                                        switch (args[1])
+                                        {
+                                            case "HUNTER":
+                                                if(huntNaamValid) {
+
+                                                    apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "hunter", JotiApp.Auth.getKey(), "andere",  huntNaam, currentItem.lastSync.toString()})));
+                                                }
+                                                else
+                                                {
+                                                    apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "hunter", JotiApp.Auth.getKey(), "all", currentItem.lastSync.toString()})));
+                                                }
+                                                break;
+                                            case "FOTO":
+                                                apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "foto", JotiApp.Auth.getKey(), "all", currentItem.lastSync.toString() })));
+                                                break;
+                                            case "SC":
+                                                apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "sc", JotiApp.Auth.getKey(), "all" })));
+                                                break;
+                                            case "USER":
+                                                apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "gebruiker", JotiApp.Auth.getKey(), "info" })));
+                                                break;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    if(args[1].equals("VOS"))
+                                    {
+                                        apiManager.queue(new ApiRequest(LinkBuilder.build(new String[]{ "vos", JotiApp.Auth.getKey(), args[2], "all" })));
+                                    }
+                                    else
+                                    {
+                                        switch (args[1])
+                                        {
+                                            case "HUNTER":
+                                                if(huntNaamValid) {
+                                                    apiManager.queue(new ApiRequest(LinkBuilder.build(new String[]{"hunter", JotiApp.Auth.getKey(), "andere", huntNaam})));
+                                                }
+                                                else
+                                                {
+                                                    apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "hunter", JotiApp.Auth.getKey(), "all" })));
+                                                }
+                                                break;
+                                            case "FOTO":
+                                                apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "foto", JotiApp.Auth.getKey(), "all" })));
+                                                break;
+                                            case "SC":
+                                                apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "sc", JotiApp.Auth.getKey(), "all" })));
+                                                break;
+                                            case "USER":
+                                                apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "gebruiker", JotiApp.Auth.getKey(), "info" })));
+                                                break;
+                                        }
+                                    }
+                                }
+
+                                /**
+                                 * Set the last sync date to now.
+                                 * */
+                                currentItem.lastSync = new Date();
+                                currentItem.hasBeenSynced = true;
+                            }
                         }
                     }
+                    else
+                    {
+
+                        apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "vos", JotiApp.Auth.getKey(), "a", "all"})));
+                        apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "vos", JotiApp.Auth.getKey(), "b", "all"})));
+                        apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "vos", JotiApp.Auth.getKey(), "c", "all"})));
+                        apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "vos", JotiApp.Auth.getKey(), "d", "all"})));
+                        apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "vos", JotiApp.Auth.getKey(), "e", "all"})));
+                        apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "vos", JotiApp.Auth.getKey(), "f", "all"})));
+                        apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "vos", JotiApp.Auth.getKey(), "x", "all"})));
+
+                        apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "sc", JotiApp.Auth.getKey(), "all"})));
+                        apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "hunter", JotiApp.Auth.getKey(), "all"})));
+                        apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "foto", JotiApp.Auth.getKey(), "all"})));
+                        apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "gebruiker", JotiApp.Auth.getKey(), "info"})));
+                    }
+
+                    /**
+                     * Preform the request now, to maintain a time period between each request.
+                     * Preforming all requests at once, will result in a API overload.
+                     * */
+                    apiManager.preform();
                 }
                 else
                 {
-
-                    apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "vos", JotiApp.Auth.getKey(), "a", "all"})));
-                    apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "vos", JotiApp.Auth.getKey(), "b", "all"})));
-                    apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "vos", JotiApp.Auth.getKey(), "c", "all"})));
-                    apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "vos", JotiApp.Auth.getKey(), "d", "all"})));
-                    apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "vos", JotiApp.Auth.getKey(), "e", "all"})));
-                    apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "vos", JotiApp.Auth.getKey(), "f", "all"})));
-                    apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "vos", JotiApp.Auth.getKey(), "x", "all"})));
-
-                    apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "sc", JotiApp.Auth.getKey(), "all"})));
-                    apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "hunter", JotiApp.Auth.getKey(), "all"})));
-                    apiManager.queue(new ApiRequest(LinkBuilder.build(new String[] { "foto", JotiApp.Auth.getKey(), "all"})));
+                    /**
+                     * We are not connected to the internet.
+                     * */
+                    JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_SYNCER_SYNC_FAILED_NO_INTERNET, "Syncer", "No internet connection.", Tracker.TrackerMessage.LEVEL_WARNING));
                 }
 
-                /**
-                 * Preform the request now, to maintain a time period between each request.
-                 * Preforming all requests at once, will result in a API overload.
-                 * */
-                apiManager.preform();
+/*                JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_SYNC_STARTED, "Syncer", "A sync has been started."));
+
+                JotiApp.MainTracker.subscribe(new Tracker.TrackerSubscriberCallback() {
+                    @Override
+                    public void onConditionMet(Tracker.TrackerMessage message) {
+                        JotiApp.MainTracker.postponeReport(new Tracker.TrackerMessage(TRACKER_SYNC_ENDED, "Syncer", "The sync has been ended."));
+                        JotiApp.MainTracker.postponeUnsubscribe(this);
+                    }
+                }, new Predicate<String>() {
+                    @Override
+                    public boolean apply(String s) {
+                        return s.equals(ApiManager.TRACKER_APIMANAGER_FETCHING_COMPLETED);
+                    }
+                });*/
             }
             else
             {
@@ -1505,11 +1755,16 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                     }
                 });
 
+
+                /**
+                 * Inform possible listeners that the sync failed because a auth is required.
+                 * */
+                JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_SYNCER_SYNC_FAILED_AUTH_REQUIRED, "Syncer", "Authentication is required."));
+
                 /**
                  * Require a auth, so that we can sync.
                  * */
                 JotiApp.Auth.requireAuth();
-
             }
         }
 
@@ -1536,6 +1791,21 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                 public boolean hasBeenSynced = false;
 
                 /**
+                 * Value indicating if the item has local data.
+                 * */
+                public boolean hasLocalData = false;
+
+                /**
+                 * The min interval the item should be synced.
+                 * */
+                public long syncInterval;
+
+                /**
+                 * The value indicating if syncInterval should be used.
+                 * */
+                public boolean useSyncInterval = false;
+
+                /**
                  * The last sync of this item.
                  * */
                 public Date lastSync;
@@ -1543,124 +1813,66 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
                 /**
                  * Initializes a new instance of SyncStateItem.
                  * */
-                public SyncStateItem(boolean needsSync, boolean hasBeenSynced)
+                public SyncStateItem(boolean needsSync, boolean hasLocalData)
                 {
                     this.needsSync = needsSync;
-                    this.hasBeenSynced = hasBeenSynced;
+                    this.hasLocalData = hasLocalData;
                 }
+
+                /**
+                 * Initializes a new instance of SyncStateItem.
+                 * */
+                public SyncStateItem(boolean needsSync, boolean hasLocalData, long syncInterval)
+                {
+                    this.needsSync = needsSync;
+                    this.hasLocalData = hasLocalData;
+
+                    /**
+                     * Check if to use interval.
+                     * */
+                    if(syncInterval == DONT_USE_INTERVAL)
+                    {
+                        this.syncInterval = syncInterval;
+                        this.useSyncInterval = false;
+                    }
+                    else
+                    {
+                        this.syncInterval = syncInterval;
+                        this.useSyncInterval = true;
+                    }
+
+                }
+
+                public static final long DONT_USE_INTERVAL = -1;
+
             }
         }
+
+        public static final String TRACKER_SYNCER_SYNC_FAILED_AUTH_REQUIRED = "TRACKER_SYNCER_SYNC_FAILED_AUTH_REQUIRED";
+
+        public static final String TRACKER_SYNCER_SYNC_FAILED_NO_INTERNET = "TRACKER_SYNCER_SYNC_FAILED_NO_INTERNET";
 
     }
 
     /**
      * @author Dingenis Sieger Sinke
      * @version 1.0
-     * @since 4-2-2016
-     * Class for fetching data from the server.
+     * @since 13-2-2016
+     * Class for helping with applying the preferences to the GoogleMap.
      * */
-    public static class Fetcher
+    public static class PreferenceHelper
     {
-        /**
-         * Value indicating if the Fetcher has fetch.
-         * */
-        public static boolean hasFetched = false;
 
         /**
-         * Value indicating if the Fetcher is fetching some data.
+         * Apply the preferences to the GoogleMap.
          * */
-        public static boolean isFetching = false;
-
-        /**
-         * Initializes the Fetcher.
-         * */
-        public static void initialize()
+        public static void applyPreferences(GoogleMap googleMap)
         {
-            JotiApp.MainTracker.subscribe(new Tracker.TrackerSubscriberCallback() {
-                @Override
-                public void onConditionMet(Tracker.TrackerMessage message) {
-                    Fetcher.isFetching = false;
-                    Fetcher.hasFetched = true;
-                    JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_FETCHER_FETCHING_COMPLETED, "Fetcher", "Fetching completed."));
-                }
-            }, new Predicate<String>() {
-                @Override
-                public boolean apply(String s) {
-                    return (s.equals(ApiManager.TRACKER_APIMANAGER_FETCHING_COMPLETED));
-                }
-            });
-        }
-
-        /**
-         * Fetches the latest data from the server.
-         * */
-        public static void fetch()
-        {
-
-            /**
-             * Checks if the fetching is not already on going, if so don't fetch the new data, else do.
-             * */
-            if(!isFetching)
+            if(googleMap != null)
             {
-
-                if(JotiApp.Auth.isAuth())
-                {
-                    /**
-                     * Use the API_V1_ROOT of the v1 API.
-                     * TODO: Update to v2 API usage.
-                     * */
-                    LinkBuilder.setRoot(Area348.API_V1_ROOT);
-
-                    /**
-                     * Queue in some requests.
-                     * */
-                    apiManager.queue(new ApiRequest(LinkBuilder.build(new String[]{"vos", "a", "all"}), null));
-                    apiManager.queue(new ApiRequest(LinkBuilder.build(new String[]{"vos", "b", "all"}), null));
-                    apiManager.queue(new ApiRequest(LinkBuilder.build(new String[]{"vos", "c", "all"}), null));
-                    apiManager.queue(new ApiRequest(LinkBuilder.build(new String[]{"vos", "d", "all"}), null));
-                    apiManager.queue(new ApiRequest(LinkBuilder.build(new String[]{"vos", "e", "all"}), null));
-                    apiManager.queue(new ApiRequest(LinkBuilder.build(new String[]{"vos", "f", "all"}), null));
-                    apiManager.queue(new ApiRequest(LinkBuilder.build(new String[]{"vos", "x", "all"}), null));
-
-                    apiManager.queue(new ApiRequest(LinkBuilder.build(new String[]{"sc", "all"}), null));
-
-                    /**
-                     * Preform the requests.
-                     * */
-                    apiManager.preform();
-
-                    /**
-                     * Indicate that the static part is fetching data.
-                     * */
-                    isFetching = true;
-                }
-                else
-                {
-                    /**
-                     * Send out a message, to inform listeners that a auth is required.
-                     * */
-                    JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_FETCHER_FETCHING_FAILED_AUTH_REQUIRED, "Fetcher", "Auth is required, for the fetch."));
-
-                    /**
-                     * Ask for a auth.
-                     * */
-                    JotiApp.Auth.requireAuth();
-                }
+                googleMap.setMapType(Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(JotiApp.getContext()).getString("pref_map_type", "1")));
             }
         }
-
-
-        public static void smartFetch()
-        {
-
-        }
-
-        public static final String TRACKER_FETCHER_FETCHING_FAILED_AUTH_REQUIRED = "TRACKER_FETCHER_FETCHING_FAILED_AUTH_REQUIRED";
-
-        public static final String TRACKER_FETCHER_FETCHING_COMPLETED = "TRACKER_FETCHER_FETCHING_COMPLETED";
-
-
-
     }
 
     /**
@@ -1670,7 +1882,7 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
 
     public static final LatLng RP_LAT_LNG = new LatLng(52.015335, 6.025965);
 
-    public static final float ZOOM = 7;
+    public static final float ZOOM = 9;
 
     public static final float TILT = 0;
 

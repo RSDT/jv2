@@ -1,7 +1,5 @@
 package com.rsdt.jotial.mapping.area348.behaviour.events;
 
-import android.util.Log;
-
 import java.util.ArrayList;
 
 /**
@@ -39,13 +37,11 @@ public final class MapBehaviourEventRaiser {
              * */
             if(mapBehaviourEvent.getTrigger() == eventTrigger.getTrigger())
             {
-                Log.i("MapBehaviourEventRaiser", "raiseEvent() - event with same trigger found");
                 /**
                  * Checks if this EventTrigger should apply on the current event.
                  * */
                 if(mapBehaviourEvent.apply(eventTrigger.getApplier()))
                 {
-                    Log.i("MapBehaviourEventRaiser", "raiseEvent() - event applies to situation, invoking MapBehaviourEvent.onConditionMet(args)");
                     mapBehaviourEvent.onConditionMet(eventTrigger.getArgs());
                 }
             }

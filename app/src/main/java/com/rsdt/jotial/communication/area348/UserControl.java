@@ -58,6 +58,18 @@ public class UserControl implements ApiManager.OnApiTaskCompleteCallback {
      * */
     private Drawable drawableBuffer;
 
+    /**
+     * Value indicating that a user info is present.
+     * */
+    private boolean hasUser = false;
+
+    /**
+     * Get the value indicating that a user info is present.
+     * */
+    public boolean hasUser() {
+        return hasUser;
+    }
+
     public void addInfoListener(OnUserInfoRetrievedCallback callback)
     {
         onUserInfoRetrievedCallbacks.add(callback);
@@ -114,24 +126,6 @@ public class UserControl implements ApiManager.OnApiTaskCompleteCallback {
     @Override
     public void onApiTaskCompleted(ArrayList<ApiResult> results, String origin) {
         new UserInfoProcessingTask(origin).execute(results.toArray(new ApiResult[results.size()]));
-    }
-
-    /**
-     * Retrieves the UserInfo, from the server.
-     * */
-    public void retrieve()
-    {
-        String key = JotiApp.Auth.getKey();
-
-        if(key != null && !key.isEmpty())
-        {
-            MapManager.getApiManager().queue(new ApiRequest(LinkBuilder.build(new String[]{ "gebruiker", key, "info"})));
-            MapManager.getApiManager().preform();
-        }
-        else
-        {
-            JotiApp.Auth.requireAuth();
-        }
     }
 
     /**
@@ -282,18 +276,45 @@ public class UserControl implements ApiManager.OnApiTaskCompleteCallback {
                 }
 
                 /**
-                 * Download the info's drawable avatar in the background.
+                 * Indicate a user info is present.
                  * */
-                new DownloadAvatarTask().execute(info);
+                hasUser = true;
 
                 /**
-                 * Report that the users info has been retrieved.
+                 * Only get the avatar if the result was not a buffered one.
                  * */
-                JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_USERCONTROL_USERINFO_RETRIEVE_SUCCEEDED, "UserControl", "Successfully retrieved the user info"));
+                if(origin.equals(ApiManager.ORIGIN_PREFORM))
+                {
+                    /**
+                     * Download the info's drawable avatar in the background.
+                     * */
+                    new DownloadAvatarTask().execute(info);
+
+                    /**
+                     * Report that the users info has been retrieved.
+                     * */
+                    JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_USERCONTROL_USERINFO_RETRIEVE_SUCCEEDED, "UserControl", "Successfully retrieved the user info"));
+
+                }
+                else
+                {
+                    /**
+                     * Report that the users info has been retrieved.
+                     * */
+                    JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_USERCONTROL_USERINFO_LOAD_SUCCEEDED, "UserControl", "Successfully loaded the user info"));
+                }
             }
             else
             {
-                JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_USERCONTROL_USERINFO_RETRIEVE_FAILED, "UserControl", "Failed to retrieve user info"));
+                if(origin.equals(ApiManager.ORIGIN_PREFORM))
+                {
+                    JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_USERCONTROL_USERINFO_RETRIEVE_FAILED, "UserControl", "Failed to retrieve the user info"));
+                }
+                else
+                {
+                    JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_USERCONTROL_USERINFO_LOAD_FAILED, "UserControl", "Failed to load the user info"));
+                }
+
             }
         }
 
@@ -380,11 +401,11 @@ public class UserControl implements ApiManager.OnApiTaskCompleteCallback {
                     drawableBuffer = drawable;
                 }
 
-                JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_USERCONTROL_AVATAR_RETRIEVE_SUCCEEDED, "DownloadAvatarTask", "The avatar has successfully been retrieved."));
+                JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_USERCONTROL_AVATAR_RETRIEVE_SUCCEEDED, "DownloadAvatarTask", "The avatar has successfully been retrieved"));
             }
             else
             {
-                JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_USERCONTROL_AVATAR_RETRIEVE_FAILED, "DownloadAvatarTask", "Failed to retrieve avatar."));
+                JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_USERCONTROL_AVATAR_RETRIEVE_FAILED, "DownloadAvatarTask", "Failed to retrieve avatar"));
             }
 
         }
@@ -408,40 +429,47 @@ public class UserControl implements ApiManager.OnApiTaskCompleteCallback {
         protected void onPostExecute(Drawable drawable) {
             super.onPostExecute(drawable);
 
-            /**
-             * Check if there are listeners, if not buffer the result.
-             * */
-            if(onUserAvatarRetrievedCallbacks.size() > 0)
+            if(drawable != null)
             {
                 /**
-                 * Allocate callback as buffer.
+                 * Check if there are listeners, if not buffer the result.
                  * */
-                OnUserAvatarRetrievedCallback callback;
-
-                /**
-                 * Loop trough each callback.
-                 * */
-                for(int i = 0; i < onUserAvatarRetrievedCallbacks.size(); i++)
+                if(onUserAvatarRetrievedCallbacks.size() > 0)
                 {
                     /**
-                     * Set the callback.
+                     * Allocate callback as buffer.
                      * */
-                    callback = onUserAvatarRetrievedCallbacks.get(i);
+                    OnUserAvatarRetrievedCallback callback;
 
                     /**
-                     * Check if the callback isn't null, if so invoke it.
+                     * Loop trough each callback.
                      * */
-                    if(callback != null)
+                    for(int i = 0; i < onUserAvatarRetrievedCallbacks.size(); i++)
                     {
-                        callback.onUserAvatarRetrieved(drawable);
+                        /**
+                         * Set the callback.
+                         * */
+                        callback = onUserAvatarRetrievedCallbacks.get(i);
+
+                        /**
+                         * Check if the callback isn't null, if so invoke it.
+                         * */
+                        if(callback != null)
+                        {
+                            callback.onUserAvatarRetrieved(drawable);
+                        }
                     }
                 }
+                else
+                {
+                    drawableBuffer = drawable;
+                }
+                JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_USERCONTROL_AVATAR_LOAD_SUCCEEDED, "UserAvatarReadTask", "The avatar has been successfully loaded"));
             }
             else
             {
-                drawableBuffer = drawable;
+                JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_USERCONTROL_AVATAR_LOAD_FAILED, "UserAvatarReadTask", "Failed to load avatar"));
             }
-
         }
 
         public static final String USER_AVATAR = "USER_AVATAR";
@@ -463,9 +491,18 @@ public class UserControl implements ApiManager.OnApiTaskCompleteCallback {
         void onUserAvatarRetrieved(Drawable avatar);
     }
 
+
+    public static final String TRACKER_USERCONTROL_AVATAR_LOAD_SUCCEEDED = "TRACKER_USERCONTROL_AVATAR_LOAD_SUCCEEDED";
+
+    public static final String TRACKER_USERCONTROL_AVATAR_LOAD_FAILED = "TRACKER_USERCONTROL_AVATAR_LOAD_FAILED";
+
     public static final String TRACKER_USERCONTROL_AVATAR_RETRIEVE_SUCCEEDED = "TRACKER_USERCONTROL_AVATAR_RETRIEVE_SUCCEEDED";
 
     public static final String TRACKER_USERCONTROL_AVATAR_RETRIEVE_FAILED = "TRACKER_USERCONTROL_AVATAR_RETRIEVE_FAILED";
+
+    public static final String TRACKER_USERCONTROL_USERINFO_LOAD_SUCCEEDED = "TRACKER_USERCONTROL_USERINFO_LOAD_SUCCEEDED";
+
+    public static final String TRACKER_USERCONTROL_USERINFO_LOAD_FAILED = "TRACKER_USERCONTROL_USERINFO_LOAD_FAILED";
 
     public static final String TRACKER_USERCONTROL_USERINFO_RETRIEVE_SUCCEEDED = "TRACKER_USERCONTROL_USERINFO_RETRIEVE_SUCCEEDED";
 

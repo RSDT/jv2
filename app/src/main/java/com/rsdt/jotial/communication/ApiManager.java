@@ -199,11 +199,6 @@ public class ApiManager {
                             }
                             bufferedReader.close();
                             results.add(new ApiResult(currentRequest, builder.toString(), connection.getResponseCode()));
-
-                            /**
-                             * Write the error to the log.
-                             * */
-                            Log.e("ApiManager", builder.toString());
                         }
 
                         /**
@@ -267,13 +262,6 @@ public class ApiManager {
         /**
          *
          * */
-        public ResultProcessingTask() {
-            this.origin = ORIGIN_PREFORM;
-        }
-
-        /**
-         *
-         * */
         public ResultProcessingTask(String origin) {
             this.origin = origin;
         }
@@ -321,6 +309,9 @@ public class ApiManager {
                          * */
                         if (entry.getKey() != null) {
 
+                            /**
+                             * Check if the condition is not null.
+                             * */
                             if(entry.getValue().condition != null)
                             {
                                 /**
@@ -452,15 +443,15 @@ public class ApiManager {
 
     /**
      * The delay for the ApiTask, a delay is needed because if we execute the requests rapidly after each other,
-     * the API will get overloaded. So we use a delay. A delay of 800ms is recommend, lower than this will
+     * the API will get overloaded. So we use a delay. A delay of 1000ms is recommend, lower than this will
      * possibly result in API overload.
      * */
-    public static int APITASK_DELAY = 800;
+    public static int APITASK_DELAY = 1000;
 
     /**
      * Value indicating if a delay should be used for the ApiTask, default true.
      * */
-    public static final boolean APITASK_USE_DELAY = true;
+    public static final boolean APITASK_USE_DELAY = false;
 
     /**
      * Defines a Tracker identifier for the completion of the fetching.
