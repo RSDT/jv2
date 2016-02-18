@@ -179,7 +179,6 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
             @Override
             public boolean apply(ApiResult result) {
 
-                Log.i("sf", "sfsf");
                 return result.getRequest().getUrl().getPath().split("/")[1].equals("sc")
                         && result.getResponseCode() == 200
                         && result.getRequest().getMethod().equals(ApiRequest.GET);
@@ -727,7 +726,7 @@ public class MapManager implements DataProcessingManager.OnDataTaskCompletedCall
     {
 
         /**
-         * Handler to handle update tasks.
+         * Handler to handle update apiTasks.
          * */
         Handler circleHandler = new Handler();
 

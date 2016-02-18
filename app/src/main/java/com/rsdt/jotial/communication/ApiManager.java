@@ -41,9 +41,14 @@ public class ApiManager {
     protected ArrayList<ApiResult> completed = new ArrayList<>();
 
     /**
-     * The array list with ongoing tasks.
+     * The array list with ongoing apiTasks.
      * */
-    protected ArrayList<ApiTask> tasks = new ArrayList<>();
+    protected ArrayList<ApiTask> apiTasks = new ArrayList<>();
+
+    /**
+     * The array list with the ongoing processingTasks.
+     * */
+    protected ArrayList<ResultProcessingTask> processingTasks = new ArrayList<>();
 
     /**
      * The list of listeners and there associated encapsulations.
@@ -96,11 +101,11 @@ public class ApiManager {
     {
         if(!queued.isEmpty()) {
             /**
-             * Create, store and exectue the StaticApiTask.
+             * Create, store and exectue the ApiTask.
              * */
             ApiTask task = new ApiTask();
             task.execute(queued.toArray(new ApiRequest[queued.size()]));
-            tasks.add(task);
+            apiTasks.add(task);
 
             /**
              * Add all the queued to the pending list.
@@ -126,9 +131,13 @@ public class ApiManager {
     {
         if(results.size() > 0)
         {
+            /**
+             * Execute the ResultProcessingTask.
+             * */
             new ResultProcessingTask(ORIGIN_PROCESS).execute(results.toArray(new ApiResult[results.size()]));
+
             Log.i("ApiManager", "ApiTask.onPostExecute() - started running ResultProcessingTask on results");
-            Log.i("ApiManager", "ApiTask.onPostExecute() - completed " + results.size() + " tasks");
+            Log.i("ApiManager", "ApiTask.onPostExecute() - completed " + results.size() + " apiTasks");
         }
     }
 
@@ -245,9 +254,16 @@ public class ApiManager {
              * */
             JotiApp.MainTracker.report(new Tracker.TrackerMessage(TRACKER_APIMANAGER_FETCHING_COMPLETED, "ApiManager", "Fetching completed."));
 
+            /**
+             * Create, store and execute the ResultProcessingTask.
+             * */
             new ResultProcessingTask(ORIGIN_PREFORM).execute(results.toArray(new ApiResult[results.size()]));
+
+            /**
+             *
+             * */
             Log.i("ApiManager", "ApiTask.onPostExecute() - started running ResultProcessingTask on results");
-            Log.i("ApiManager", "ApiTask.onPostExecute() - completed " + results.size() + " tasks");
+            Log.i("ApiManager", "ApiTask.onPostExecute() - completed " + results.size() + " API tasks");
         }
     }
 
@@ -260,10 +276,13 @@ public class ApiManager {
     protected class ResultProcessingTask extends AsyncTask<ApiResult, Integer, ArrayList<ApiResult>> {
 
         /**
+         * Initializes a new instance of ResultProcessingTask.
          *
+         * @param origin The origin of the results.
          * */
         public ResultProcessingTask(String origin) {
             this.origin = origin;
+            processingTasks.add(this);
         }
 
         /**
@@ -362,7 +381,17 @@ public class ApiManager {
                     Log.i("ApiManager", "ResultProcessingTask.onPostExecute() - invoked listener " + entry.getKey().toString());
                 }
             }
+
+            /**
+             * Remove the task.
+             * */
+            processingTasks.remove(this);
         }
+
+        /**
+         * Defines a Tracker id for when the result processing is completed.
+         * */
+        public static final String TRACKER_RESULT_PROCESSING_COMPLETED = "TRACKER_RESULT_PROCESSING_COMPLETED";
     }
 
     /**

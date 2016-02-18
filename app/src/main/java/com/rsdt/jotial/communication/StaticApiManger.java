@@ -33,14 +33,49 @@ public class StaticApiManger extends ApiManager {
     public void addListener(OnApiTaskCompleteCallback listener, Predicate<ApiResult> filter) {
         super.addListener(listener, filter);
 
+
         /**
-         * Check if the wait list is empty, if not handle the results that were put on wait.
+         * Check if there's a running ResultProcessingTask.
          * */
-        if(!waitList.isEmpty())
+        if(processingTasks.size() > 0)
         {
-            new StaticResultProcessingTask(ORIGIN_PREFORM).execute(waitList.toArray(new ApiResult[waitList.size()]));
-            waitList.clear();
+            JotiApp.MainTracker.subscribe(new Tracker.TrackerSubscriberCallback() {
+                @Override
+                public void onConditionMet(Tracker.TrackerMessage message) {
+                    /**
+                     * Check if the wait list is empty, if not handle the results that were put on wait.
+                     * */
+                    if(!waitList.isEmpty())
+                    {
+                        new StaticResultProcessingTask(ORIGIN_PREFORM).execute(waitList.toArray(new ApiResult[waitList.size()]));
+                        waitList.clear();
+                    }
+
+                    /**
+                     * Unsub from the event.
+                     * */
+                    JotiApp.MainTracker.postponeUnsubscribe(this);
+                }
+            }, new Predicate<String>() {
+                @Override
+                public boolean apply(String s) {
+                    return (s.equals(ResultProcessingTask.TRACKER_RESULT_PROCESSING_COMPLETED));
+                }
+            });
         }
+        else
+        {
+
+            /**
+             * Check if the wait list is empty, if not handle the results that were put on wait.
+             * */
+            if(!waitList.isEmpty())
+            {
+                new StaticResultProcessingTask(ORIGIN_PREFORM).execute(waitList.toArray(new ApiResult[waitList.size()]));
+                waitList.clear();
+            }
+        }
+
     }
 
     @Override
@@ -51,7 +86,7 @@ public class StaticApiManger extends ApiManager {
              * */
             StaticApiTask task = new StaticApiTask();
             task.execute(queued.toArray(new ApiRequest[queued.size()]));
-            tasks.add(task);
+            apiTasks.add(task);
 
             /**
              * Add all the queued to the pending list.
@@ -79,7 +114,7 @@ public class StaticApiManger extends ApiManager {
         {
             new StaticResultProcessingTask(ORIGIN_PROCESS).execute(results.toArray(new ApiResult[results.size()]));
             Log.i("ApiManager", "ApiTask.onPostExecute() - started running StaticResultProcessingTask on results");
-            Log.i("ApiManager", "ApiTask.onPostExecute() - completed " + results.size() + " tasks");
+            Log.i("ApiManager", "ApiTask.onPostExecute() - completed " + results.size() + " apiTasks");
         }
     }
 
@@ -114,7 +149,7 @@ public class StaticApiManger extends ApiManager {
              * Log what has been done, and what we are doing.
              * */
             Log.i("ApiManager", "ApiTask.onPostExecute() - started running StaticResultProcessingTask on results");
-            Log.i("ApiManager", "ApiTask.onPostExecute() - completed " + results.size() + " tasks");
+            Log.i("ApiManager", "ApiTask.onPostExecute() - completed " + results.size() + " apiTasks");
         }
     }
 
@@ -143,6 +178,8 @@ public class StaticApiManger extends ApiManager {
             {
                 waitList.addAll(apiResults);
             }
+
+            JotiApp.MainTracker.report(new Tracker.TrackerMessage(ResultProcessingTask.TRACKER_RESULT_PROCESSING_COMPLETED, "ResultProcessingTask", "The processing has been completed"));
         }
     }
 

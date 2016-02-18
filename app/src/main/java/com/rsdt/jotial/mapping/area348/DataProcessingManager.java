@@ -33,7 +33,7 @@ public class DataProcessingManager implements ApiManager.OnApiTaskCompleteCallba
     protected ArrayList<OnDataTaskCompletedCallback> onDataTaskCompletedListeners = new ArrayList<>();
 
     /**
-     * The tasks that are executed or are executing still.
+     * The apiTasks that are executed or are executing still.
      * */
     protected ArrayList<DataProcessingTask> tasks = new ArrayList<>();
 
@@ -235,7 +235,7 @@ public class DataProcessingManager implements ApiManager.OnApiTaskCompleteCallba
             }
 
             /**
-             * Remove the task, out of the list of tasks.
+             * Remove the task, out of the list of apiTasks.
              * */
             tasks.remove(this);
         }
