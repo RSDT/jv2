@@ -48,8 +48,6 @@ public class MapBehaviourManager extends HashMap<String, MapBehaviour> implement
 
     public void raiseEvent(EventTrigger eventTrigger)
     {
-        Log.i("MapBehaviourEventRaiser", "raiseEvent() - event with trigger: " + eventTrigger.getTrigger() + ", applier: " + eventTrigger.getApplier().toString());
-
         /**
          * Loop through each entry.
          * */

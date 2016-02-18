@@ -334,6 +334,9 @@ public class MainActivity extends AppCompatActivity
                     }
                 }).setActionTextColor(Color.parseColor("#E91E63")));
                 break;
+            case MapManager.Syncer.TRACKER_SYNCER_SYNC_FAILED_NO_INTERNET:
+                SnackbarControl.show(Snackbar.make(findViewById(R.id.content_layout), "Geen verbinding met het internet.", Snackbar.LENGTH_LONG));
+                break;
 
         }
     }
@@ -350,8 +353,6 @@ public class MainActivity extends AppCompatActivity
         }
 
     }
-
-
 
     private class PreferenceChangesManager implements SharedPreferences.OnSharedPreferenceChangeListener
     {
@@ -568,6 +569,10 @@ public class MainActivity extends AppCompatActivity
                                     PC = true;
                                     CC = true;
                                     break;
+                                case MapManager.Syncer.TRACKER_SYNCER_SYNC_FAILED_NO_INTERNET:
+                                    PC = true;
+                                    CC = true;
+                                    break;
                             }
 
                             /**
@@ -585,7 +590,8 @@ public class MainActivity extends AppCompatActivity
                         public boolean apply(String s) {
                             return (s.equals(DataProcessingManager.TRACKER_DATAMANAGER_PROCESSING_COMPLETED) ||
                                     s.equals(MapManager.TRACKER_MAPMANAGER_CLUSTERING_COMPLETED) ||
-                                    s.equals(MapManager.Syncer.TRACKER_SYNCER_SYNC_FAILED_AUTH_REQUIRED));
+                                    s.equals(MapManager.Syncer.TRACKER_SYNCER_SYNC_FAILED_AUTH_REQUIRED) ||
+                                    s.equals(MapManager.Syncer.TRACKER_SYNCER_SYNC_FAILED_NO_INTERNET));
                         }
                     });
 

@@ -135,7 +135,7 @@ public class ScoutingGroepMapBehaviour extends MapBehaviour {
     /**
      * Defines the stroke width of the ScoutingGroep circle.
      * */
-    public static final int SCOUTING_GROEP_CIRCLE_STROKE_WIDTH = 3;
+    public static final int SCOUTING_GROEP_CIRCLE_STROKE_WIDTH = 0;
 
     /**
      * Defines the how much the fill color should be alphed.

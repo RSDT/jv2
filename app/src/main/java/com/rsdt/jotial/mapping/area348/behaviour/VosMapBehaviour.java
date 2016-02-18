@@ -307,7 +307,7 @@ public class VosMapBehaviour extends MapBehaviour {
     /**
      * Defines the stroke width of the vos circle.
      * */
-    public static final int VOS_CIRCLE_STROKE_WIDTH = 3;
+    public static final int VOS_CIRCLE_STROKE_WIDTH = 0;
 
     /**
      * Defines the stroke color of the vos circle.
